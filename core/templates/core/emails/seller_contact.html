@@ -1,0 +1,25 @@
+{% extends 'core/emails/base_email.html' %}
+
+{% block content %}
+<tr>
+    <td class="content-cell">
+        <h1>New Message from Potential Buyer</h1>
+        <p>Hello {{ app.developer.username }},</p>
+        
+        <p>You have received a new message regarding your app "{{ app.name }}" that is listed for sale.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>From:</strong> {{ sender.username }}</p>
+            <p><strong>Email:</strong> {{ sender.email }}</p>
+            <p><strong>Message:</strong></p>
+            <p style="white-space: pre-wrap;">{{ message }}</p>
+        </div>
+        
+        <p>You can reply directly to this email to respond to the potential buyer.</p>
+        
+        <p>View your app listing: <a href="{{ app_url }}">{{ app.name }}</a></p>
+        
+        <p>Best regards,<br>The FundAfrica Team</p>
+    </td>
+</tr>
+{% endblock %} 

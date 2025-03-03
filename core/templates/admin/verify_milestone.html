@@ -1,0 +1,117 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Verify Milestone: {{ milestone.title }}</h3>
+                    <h6 class="card-subtitle text-muted">{{ app.name }}</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Milestone Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Milestone Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Description</dt>
+                                <dd class="col-sm-8">{{ milestone.description }}</dd>
+                                
+                                <dt class="col-sm-4">Target Date</dt>
+                                <dd class="col-sm-8">{{ milestone.target_date }}</dd>
+                                
+                                <dt class="col-sm-4">Release Percentage</dt>
+                                <dd class="col-sm-8">{{ milestone.release_percentage }}%</dd>
+                                
+                                <dt class="col-sm-4">Release Amount</dt>
+                                <dd class="col-sm-8">₦{{ release_amount|floatformat:2 }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Progress</h5>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ milestone.progress }}%">
+                                    {{ milestone.progress }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deliverables -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5>Deliverables</h5>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Evidence</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for deliverable in deliverables %}
+                                    <tr>
+                                        <td>{{ deliverable.title }}</td>
+                                        <td>{{ deliverable.description }}</td>
+                                        <td>
+                                            <span class="badge {% if deliverable.status == 'COMPLETED' %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ deliverable.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if deliverable.evidence_file %}
+                                            <a href="{{ deliverable.evidence_file.url }}" target="_blank">
+                                                View Evidence
+                                            </a>
+                                            {% else %}
+                                            No evidence uploaded
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No deliverables found</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Verification Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Verification Decision</h5>
+                            <form method="post" class="row g-3">
+                                {% csrf_token %}
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="rejection_reason" class="form-label">Rejection Reason (if applicable)</label>
+                                    <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3"></textarea>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <button type="submit" name="action" value="approve" class="btn btn-success me-2">
+                                        <i class="fas fa-check"></i> Approve & Release Funds
+                                    </button>
+                                    <button type="submit" name="action" value="reject" class="btn btn-danger">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                    <a href="{% url 'admin:index' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Back
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

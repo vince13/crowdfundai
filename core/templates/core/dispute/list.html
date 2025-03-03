@@ -1,0 +1,189 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Disputes{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Disputes</h1>
+        <a href="{% url 'core:create_dispute' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Dispute
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Type</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for value, label in type_choices %}
+                        <option value="{{ value }}" {% if value == current_type %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           value="{{ search_query }}" placeholder="Search disputes...">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Disputes List -->
+    {% if disputes %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>App</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dispute in disputes %}
+                    <tr>
+                        <td>#{{ dispute.id }}</td>
+                        <td>
+                            <a href="{% url 'core:dispute_detail' dispute.id %}" class="text-decoration-none">
+                                {{ dispute.title }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'core:app_detail' dispute.transaction.app.id %}" class="text-decoration-none">
+                                {{ dispute.transaction.app.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ dispute.get_dispute_type_display }}</span>
+                        </td>
+                        <td>
+                            {% if dispute.status == 'PENDING' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif dispute.status == 'IN_REVIEW' %}
+                                <span class="badge bg-info">In Review</span>
+                            {% elif dispute.status == 'RESOLVED' %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% elif dispute.status == 'CLOSED' %}
+                                <span class="badge bg-secondary">Closed</span>
+                            {% elif dispute.status == 'ESCALATED' %}
+                                <span class="badge bg-danger">Escalated</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ dispute.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'core:dispute_detail' dispute.id %}" 
+                                   class="btn btn-sm btn-outline-primary"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="View Dispute Details">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if user.is_staff or dispute.transaction.app.developer == user %}
+                                <a href="{% url 'core:manage_dispute' dispute.id %}" 
+                                   class="btn btn-sm btn-outline-secondary"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="Manage Dispute">
+                                    <i class="fas fa-cog"></i> Manage
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if disputes.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if disputes.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ disputes.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in disputes.paginator.page_range %}
+            <li class="page-item {% if disputes.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endfor %}
+
+            {% if disputes.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ disputes.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <h4>No disputes found</h4>
+        <p class="text-muted">There are no disputes matching your criteria.</p>
+        <a href="{% url 'core:create_dispute' %}" class="btn btn-primary">
+            Create New Dispute
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit form when filters change
+    document.querySelectorAll('#status, #type').forEach(select => {
+        select.addEventListener('change', () => {
+            select.closest('form').submit();
+        });
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+</script>
+{% endblock %} 

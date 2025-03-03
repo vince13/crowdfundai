@@ -1,0 +1,153 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Record Revenue for {{ app.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <form id="recordRevenueForm" method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount (₦)</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   name="amount" 
+                                   step="0.01" 
+                                   required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Revenue Source</label>
+                            <select class="form-select" name="source" required>
+                                <option value="">Select a source</option>
+                                <option value="SUBSCRIPTION">Subscription</option>
+                                <option value="ONE_TIME">One-time Purchase</option>
+                                <option value="IN_APP">In-app Purchase</option>
+                                <option value="API_USAGE">API Usage</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" 
+                                      name="description" 
+                                      rows="3"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Period Start</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           name="period_start">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Period End</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           name="period_end">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Verification Proof</label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   name="proof"
+                                   accept=".pdf,.jpg,.png">
+                            <small class="text-muted">
+                                Upload proof of revenue (e.g., payment receipt, transaction record)
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Record Revenue
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('recordRevenueForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        amount: parseFloat(formData.get('amount')),
+        source: formData.get('source'),
+        description: formData.get('description'),
+        period_start: formData.get('period_start') || null,
+        period_end: formData.get('period_end') || null
+    };
+    
+    // Validate amount
+    if (isNaN(data.amount) || data.amount <= 0) {
+        alert('Please enter a valid amount greater than 0');
+        return;
+    }
+    
+    // Send revenue data
+    fetch('{% url "core:submit_app_revenue" app.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // If revenue is recorded, upload proof if provided
+            const proofFile = formData.get('proof');
+            if (proofFile && proofFile.size > 0) {
+                return uploadProof(data.revenue_id, proofFile);
+            }
+            return data;
+        }
+        throw new Error(data.error);
+    })
+    .then(data => {
+        alert('Revenue recorded successfully!');
+        window.location.href = '{% url "core:revenue_detail" app.id %}';
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+});
+
+function uploadProof(revenueId, file) {
+    const formData = new FormData();
+    formData.append('proof', file);
+    
+    return fetch(`{% url 'core:verify_revenue' revenue_id=0 %}`.replace('0', revenueId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json());
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,660 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+.investment-container {
+    max-width: 1000px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+}
+
+.modern-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    transition: transform 0.3s ease;
+}
+
+.modern-card:hover {
+    transform: translateY(-5px);
+}
+
+.amount-display {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2D3748;
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #718096;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #2D3748;
+    font-weight: 600;
+}
+
+.payment-method-selector {
+    display: flex;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.payment-option {
+    flex: 1;
+    padding: 1.5rem;
+    border: 2px solid #E2E8F0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option.selected {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.payment-option img {
+    height: 40px;
+    margin-bottom: 1rem;
+}
+
+.pay-button {
+    width: 100%;
+    padding: 1.2rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pay-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: #F7FAFC;
+    border-radius: 12px;
+}
+
+.summary-item h3 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #2D3748;
+}
+
+.summary-item p {
+    color: #718096;
+    margin: 0;
+}
+
+.progress-container {
+    margin: 2rem 0;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    transition: width 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+
+.percentage-input-container {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #F7FAFC;
+    border-radius: 12px;
+}
+
+.percentage-input {
+    width: 150px;
+    padding: 1rem;
+    font-size: 1.5rem;
+    text-align: center;
+    border: 2px solid #E2E8F0;
+    border-radius: 8px;
+    margin: 0 1rem;
+    transition: all 0.3s ease;
+}
+
+.percentage-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+.percentage-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.percentage-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #EDF2F7;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.percentage-btn:hover {
+    background: #E2E8F0;
+}
+
+.input-error {
+    color: #E53E3E;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    display: none;
+    padding: 0.5rem;
+    background-color: #FED7D7;
+    border-radius: 6px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .investment-container {
+        margin: 1rem auto;
+        padding: 0 0.5rem;
+    }
+    
+    .modern-card {
+        padding: 1rem;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .percentage-controls {
+        flex-wrap: wrap;
+    }
+    
+    .percentage-btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        margin: 0.25rem;
+    }
+    
+    .amount-display {
+        font-size: 2rem;
+    }
+}
+
+.pay-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.processing {
+    position: relative;
+    pointer-events: none;
+}
+
+.processing::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+}
+
+.percentage-input.error {
+    border-color: #E53E3E;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.2);
+}
+
+.percentage-input.success {
+    border-color: #48BB78;
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="investment-container">
+    <div class="modern-card">
+        <h3 class="text-center mb-4">Investment Overview</h3>
+        <div class="percentage-input-container">
+            <h4>Select Investment Percentage</h4>
+            <div class="percentage-slider">
+                <input type="range" 
+                       min="{{ app.min_investment_percentage }}" 
+                       max="{{ app.remaining_percentage }}" 
+                       value="1" 
+                       step="0.01"
+                       id="percentageSlider">
+                <div class="slider-labels">
+                    <span>{{ app.min_investment_percentage }}%</span>
+                    <span>{{ app.remaining_percentage }}%</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-center">
+                <input type="number" 
+                       id="percentageInput" 
+                       class="percentage-input" 
+                       value="1"
+                       min="{{ app.min_investment_percentage }}"
+                       max="{{ app.remaining_percentage }}"
+                       step="0.01">
+                <span class="ms-2">%</span>
+            </div>
+            <div class="percentage-controls">
+                <button class="percentage-btn" onclick="adjustPercentage(-1)">-1%</button>
+                <button class="percentage-btn" onclick="adjustPercentage(-0.1)">-0.1%</button>
+                <button class="percentage-btn" onclick="adjustPercentage(0.1)">+0.1%</button>
+                <button class="percentage-btn" onclick="adjustPercentage(1)">+1%</button>
+            </div>
+            <div class="input-error" id="percentageError"></div>
+        </div>
+        <div class="amount-display">₦<span id="totalAmount">{{ total_with_fee|floatformat:2|intcomma }}</span></div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="text-center mt-2"><span id="percentageDisplay">1</span>% of available percentage</p>
+        </div>
+        <div class="summary-grid">
+            <div class="summary-item" style="grid-column: 1 / -1; display: none;">
+                <h3>₦<span id="totalAmountSummary">{{ total_amount|floatformat:2|intcomma }}</span></h3>
+                <p>Total Investment</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modern-card">
+        <h3 class="text-center mb-4">Company Details</h3>
+        <div class="detail-row">
+            <span class="detail-label">Company Valuation</span>
+            <span class="detail-value">₦{{ app.get_company_valuation|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Minimum Investment</span>
+            <span class="detail-value">{{ app.min_investment_percentage|floatformat:2 }}%</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Total Available</span>
+            <span class="detail-value">{{ app.available_percentage|floatformat:2 }}%</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Currently Available</span>
+            <span class="detail-value remaining-percentage">{{ app.remaining_percentage|floatformat:2 }}%</span>
+        </div>
+    </div>
+
+    <div class="modern-card">
+        <h3 class="text-center mb-4">Payment Method</h3>
+        <div class="payment-method-selector">
+            <div class="payment-option selected" onclick="selectPaymentMethod('paystack')">
+                <h4>InvestSecurely with Card</h4>
+                <p class="mb-0">Powered by Paystack</p>
+            </div>
+        </div>
+        {% if user.is_authenticated %}
+        <button class="pay-button" onclick="handlePayment()">
+            Complete Investment
+        </button>
+        {% else %}
+        <button class="pay-button" onclick="window.location.href='{% url 'core:login' %}?next={{ request.path }}'">
+            Login to Invest
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+window.PAYSTACK_PUBLIC_KEY = '{{ paystack_public_key }}';
+
+let pricePerPercentage = {{ app.price_per_percentage }};
+let minPercentage = {{ app.min_investment_percentage }};
+let maxPercentage = {{ app.remaining_percentage }};
+
+// Function to fetch current available percentage
+async function fetchAvailablePercentage() {
+    try {
+        const response = await fetch(`/api/apps/{{ app.id }}/available-percentage/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            maxPercentage = parseFloat(data.available_percentage);
+            // Update UI elements
+            updateUIWithNewMaxPercentage();
+        } else {
+            console.error('Error fetching percentage:', data.error);
+        }
+    } catch (error) {
+        console.error('Error fetching available percentage:', error);
+    }
+}
+
+function updateUIWithNewMaxPercentage() {
+    // Update slider max value
+    const slider = document.getElementById('percentageSlider');
+    slider.max = maxPercentage;
+    
+    // Update percentage input max value
+    const input = document.getElementById('percentageInput');
+    input.max = maxPercentage;
+    
+    // Update display text
+    document.querySelector('.detail-value:last-child').textContent = maxPercentage.toFixed(2) + '%';
+    document.querySelector('.slider-labels span:last-child').textContent = maxPercentage.toFixed(2) + '%';
+    
+    // Validate current input value against new max
+    const currentValue = parseFloat(input.value);
+    if (currentValue > maxPercentage) {
+        input.value = maxPercentage;
+        slider.value = maxPercentage;
+        updateCalculations(maxPercentage);
+    }
+    
+    validatePercentage(parseFloat(input.value));
+}
+
+// Initialize progress bar with current percentage
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch current available percentage on page load
+    fetchAvailablePercentage();
+    
+    // Get initial percentage value (1%)
+    const initialPercentage = Math.min(1, maxPercentage);
+    
+    // Calculate and update the total amount
+    const totalAmount = initialPercentage * pricePerPercentage;
+    document.getElementById('totalAmount').textContent = formatNumber(totalAmount);
+    document.getElementById('totalAmountSummary').textContent = formatNumber(totalAmount);
+    
+    // Update progress bar and percentage display
+    updateProgressBar(initialPercentage);
+    document.getElementById('percentageDisplay').textContent = initialPercentage.toFixed(2);
+    
+    // Validate the initial percentage
+    validatePercentage(initialPercentage);
+    
+    // Set up periodic refresh of available percentage
+    setInterval(fetchAvailablePercentage, 30000); // Check every 30 seconds
+});
+
+function updateProgressBar(percentage) {
+    const progressFill = document.getElementById('progressFill');
+    const percentageDisplay = document.getElementById('percentageDisplay');
+    
+    // Calculate width as a percentage of the available percentage
+    const progressWidth = (percentage / maxPercentage) * 100;
+    
+    // Update progress bar width with smooth transition
+    progressFill.style.width = `${progressWidth}%`;
+    
+    // Update percentage display
+    percentageDisplay.textContent = percentage.toFixed(2);
+    
+    // Keep consistent green gradient
+    progressFill.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function formatNumber(number) {
+    return new Intl.NumberFormat('en-NG').format(number.toFixed(2));
+}
+
+const updateCalculations = debounce(function(percentage) {
+    const totalAmount = percentage * pricePerPercentage;
+    
+    // Update both total amount displays
+    document.getElementById('totalAmount').textContent = formatNumber(totalAmount);
+    document.getElementById('totalAmountSummary').textContent = formatNumber(totalAmount);
+    updateProgressBar(percentage);
+}, 300);
+
+function validatePercentage(value) {
+    const input = document.getElementById('percentageInput');
+    const error = document.getElementById('percentageError');
+    const isNumber = !isNaN(value) && isFinite(value);
+    
+    if (!isNumber) {
+        error.textContent = 'Please enter a valid number';
+        error.style.display = 'block';
+        input.classList.add('error');
+        input.classList.remove('success');
+        return false;
+    }
+    
+    if (value < minPercentage) {
+        error.textContent = `Minimum investment is ${minPercentage}%`;
+        error.style.display = 'block';
+        input.classList.add('error');
+        input.classList.remove('success');
+        return false;
+    }
+    
+    if (value > maxPercentage) {
+        error.textContent = `Maximum investment is ${maxPercentage}%`;
+        error.style.display = 'block';
+        input.classList.add('error');
+        input.classList.remove('success');
+        return false;
+    }
+    
+    error.style.display = 'none';
+    input.classList.remove('error');
+    input.classList.add('success');
+    return true;
+}
+
+function adjustPercentage(amount) {
+    const input = document.getElementById('percentageInput');
+    const slider = document.getElementById('percentageSlider');
+    const newValue = parseFloat(input.value) + amount;
+    if (validatePercentage(newValue)) {
+        input.value = newValue;
+        slider.value = newValue;
+        updateCalculations(newValue);
+    }
+}
+
+document.getElementById('percentageInput').addEventListener('input', debounce(function(e) {
+    const value = parseFloat(e.target.value);
+    if (validatePercentage(value)) {
+        document.getElementById('percentageSlider').value = value;
+        updateCalculations(value);
+    }
+}, 300));
+
+document.getElementById('percentageSlider').addEventListener('input', debounce(function(e) {
+    const value = parseFloat(e.target.value);
+    document.getElementById('percentageInput').value = value;
+    if (validatePercentage(value)) {
+        updateCalculations(value);
+    }
+}, 300));
+
+function validateForm() {
+    const percentageInput = document.getElementById('percentageInput');
+    const value = parseFloat(percentageInput.value);
+    return validatePercentage(value);
+}
+
+async function handlePayment() {
+    if (!validateForm()) {
+        return;
+    }
+
+    // Fetch latest available percentage before proceeding
+    try {
+        await fetchAvailablePercentage();
+        const currentValue = parseFloat(document.getElementById('percentageInput').value);
+        if (currentValue > maxPercentage) {
+            alert(`Only ${maxPercentage}% is currently available. Please adjust your investment amount.`);
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking available percentage:', error);
+        alert('Unable to verify available percentage. Please try again.');
+        return;
+    }
+
+    const button = document.querySelector('.pay-button');
+    const container = document.querySelector('.modern-card:last-child');
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    button.disabled = true;
+    container.classList.add('processing');
+
+    const currentAmount = parseFloat(document.getElementById('totalAmount').textContent.replace(/,/g, ''));
+    const percentageAmount = document.getElementById('percentageInput').value;
+    
+    fetch('/payments/create-intent/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            amount: currentAmount,
+            currency: 'NGN',
+            payment_type: 'investment',
+            app_id: '{{ app.id }}',
+            percentage_amount: percentageAmount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.error || 'Payment initialization failed');
+        }
+        
+        const handler = PaystackPop.setup({
+            key: window.PAYSTACK_PUBLIC_KEY,
+            email: '{{ user.email }}',
+            amount: Math.round(currentAmount * 100),
+            currency: 'NGN',
+            channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
+            ref: data.reference,
+            access_code: data.access_code,
+            metadata: {
+                custom_fields: [
+                    {
+                        display_name: "App ID",
+                        variable_name: "app_id",
+                        value: '{{ app.id }}'
+                    },
+                    {
+                        display_name: "Percentage Amount",
+                        variable_name: "percentage_amount",
+                        value: percentageAmount
+                    },
+                    {
+                        display_name: "Payment Type",
+                        variable_name: "payment_type",
+                        value: "investment"
+                    }
+                ]
+            },
+            onClose: function() {
+                button.innerHTML = 'Complete Investment';
+                button.disabled = false;
+                container.classList.remove('processing');
+                alert('Transaction was not completed, window closed.');
+            },
+            callback: function(response) {
+                window.location.href = `/payments/verify/?reference=${response.reference}`;
+            }
+        });
+        handler.openIframe();
+    })
+    .catch(error => {
+        console.error('Payment error:', error);
+        alert('Payment failed: ' + error.message);
+        button.innerHTML = 'Complete Investment';
+        button.disabled = false;
+        container.classList.remove('processing');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const percentageInput = document.getElementById('percentageInput');
+    validatePercentage(parseFloat(percentageInput.value));
+    
+    const cards = document.querySelectorAll('.modern-card');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    });
+
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %} 

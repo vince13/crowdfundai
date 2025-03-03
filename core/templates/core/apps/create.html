@@ -1,0 +1,661 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load currency_tags %}
+
+{% block title %}{% if is_edit %}Edit {{ app.name }}{% else %}Create New App{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">{% if is_edit %}Edit App: {{ app.name }}{% else %}Create New App Listing{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    {% if not is_edit %}
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">Before You Start</h5>
+                        <p class="mb-0">Make sure you have:</p>
+                        <ul class="mb-0">
+                            <li>A working AI/ML application with clear technical documentation</li>
+                            <li>Market analysis and business model</li>
+                            <li>Demo video or prototype ready</li>
+                            <li>GitHub repository with code and documentation</li>
+                            <li>Clear breakdown of how funds will be used</li>
+                            <li>Project milestones planned (see our <a href="{% url 'core:milestone_samples' %}" class="alert-link">milestone samples</a>)</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <h4 class="mb-3">Basic Information</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.category|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Project Status -->
+                        <h4 class="mb-3 mt-4">Project Status</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.development_stage|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.project_status|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.progress|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.estimated_completion_date|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Technical Details -->
+                        <h4 class="mb-3 mt-4">Technical Details</h4>
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.ai_features|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.github_url|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.demo_url|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.demo_video|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Funding Details -->
+                        <h4 class="mb-3 mt-4">Funding Details</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.funding_goal|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.currency|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.funding_round|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                {{ form.available_percentage|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.min_investment_percentage|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.equity_percentage|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.round_number|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.lock_in_period|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.funding_end_date|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Add hidden input for price_per_percentage -->
+                        {{ form.price_per_percentage|as_crispy_field }}
+
+                        <div class="alert alert-info mt-3">
+                            <h6 class="alert-heading">Equity & Valuation Information</h6>
+                            <p class="mb-1">Based on your inputs:</p>
+                            <ul class="mb-0">
+                                <li>Company Valuation: <span id="company_valuation">0</span></li>
+                                <li>Price per Percentage: <span id="price_per_percentage">0</span></li>
+                                <li>Retained Percentage: <span id="retained_percentage">0</span>%</li>
+                            </ul>
+                        </div>
+
+                        <!-- Use of Funds -->
+                        <h4 class="mb-3 mt-4">Use of Funds</h4>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="use-of-funds-container">
+                                    <div class="row mb-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Intended Use</label>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Amount</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Percentage</label>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label">&nbsp;</label>
+                                        </div>
+                                    </div>
+                                    <div class="use-of-funds-row row mb-2">
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control use-of-funds-category" placeholder="e.g., Development">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="input-group">
+                                                <span class="input-group-text currency-symbol">₦</span>
+                                                <input type="text" class="form-control use-of-funds-amount" placeholder="Amount">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control use-of-funds-percentage" readonly>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" class="btn btn-danger btn-sm remove-fund-row" style="display: none;">×</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="add-fund-row">
+                                        + Add Another Category
+                                    </button>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Total Percentage: <span id="total-percentage">0</span>%</small>
+                                    <div class="invalid-feedback" id="use-of-funds-error"></div>
+                                </div>
+                                {{ form.use_of_funds|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning mt-4">
+                            <strong>Important Notes:</strong>
+                            <ul class="mb-0">
+                                <li>Your app listing will be reviewed before being made public</li>
+                                <li>All information provided should be accurate and verifiable</li>
+                                <li>The funding goal must equal share price × total shares</li>
+                                <li>Lock-in period must be at least 30 days</li>
+                                <li>Use of funds must total 100%</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">{% if is_edit %}Save Changes{% else %}Create App Listing{% endif %}</button>
+                            <a href="{% if is_edit %}{% url 'core:app_detail' app.pk %}{% else %}{% url 'core:dashboard' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation variables
+    const form = document.querySelector('form');
+    const fundingGoalInput = document.getElementById('id_funding_goal');
+    const availablePercentageInput = document.getElementById('id_available_percentage');
+    const minInvestmentInput = document.getElementById('id_min_investment_percentage');
+    const equityPercentageInput = document.getElementById('id_equity_percentage');
+    const useOfFundsInput = document.getElementById('id_use_of_funds');
+    const fundingEndDateInput = document.getElementById('id_funding_end_date');
+    const currencySelect = document.getElementById('id_currency');
+    const addFundRowButton = document.getElementById('add-fund-row');
+    
+    // Currency symbols and limits
+    const currencySymbols = {
+        'NGN': '₦'
+    };
+
+    const currencyLimits = {
+        'NGN': 100000000000 // ₦100B
+    };
+    
+    // Hide the fields that should be hidden
+    const hiddenFields = ['use_of_funds', 'price_per_percentage'];
+    hiddenFields.forEach(fieldName => {
+        const field = document.getElementById(`id_${fieldName}`);
+        if (field && field.parentElement) {
+            field.parentElement.style.display = 'none';
+        }
+    });
+
+    // Function definitions
+    function formatCurrency(amount, currency) {
+        if (isNaN(amount)) return '';
+        return new Intl.NumberFormat('en-NG', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    }
+
+    function toggleRemoveButtons() {
+        const rows = document.querySelectorAll('.use-of-funds-row');
+        rows.forEach(row => {
+            const removeButton = row.querySelector('.remove-fund-row');
+            if (removeButton) {
+                removeButton.style.display = rows.length > 1 ? 'block' : 'none';
+            }
+        });
+    }
+    
+    function updatePercentages() {
+        const fundingGoal = parseFloat(fundingGoalInput.value.replace(/,/g, '')) || 0;
+        const rows = document.querySelectorAll('.use-of-funds-row');
+        let totalPercentage = 0;
+        const useOfFundsData = {};
+        
+        rows.forEach(row => {
+            const amountInput = row.querySelector('.use-of-funds-amount');
+            const percentageInput = row.querySelector('.use-of-funds-percentage');
+            const categoryInput = row.querySelector('.use-of-funds-category');
+            const amount = parseFloat(amountInput.value.replace(/,/g, '')) || 0;
+            const category = categoryInput.value.trim();
+            
+            let percentage = 0;
+            if (fundingGoal > 0 && amount > 0) {
+                percentage = (amount / fundingGoal) * 100;
+                percentageInput.value = percentage.toFixed(2) + '%';
+                if (category) {
+                    useOfFundsData[category] = parseFloat(percentage.toFixed(2));
+                    totalPercentage += percentage;
+                }
+            } else {
+                percentageInput.value = '0.00%';
+            }
+        });
+        
+        const totalPercentageElement = document.getElementById('total-percentage');
+        if (totalPercentageElement) {
+            totalPercentageElement.textContent = totalPercentage.toFixed(2);
+        }
+        
+        // Update the hidden input with JSON data
+        if (Object.keys(useOfFundsData).length > 0) {
+        useOfFundsInput.value = JSON.stringify(useOfFundsData);
+        }
+        
+        // Show warning if total is not 100%
+        const useOfFundsError = document.getElementById('use-of-funds-error');
+        if (useOfFundsError) {
+            if (Math.abs(totalPercentage - 100) > 0.1) {
+            useOfFundsError.textContent = `Total must be 100% (current: ${totalPercentage.toFixed(2)}%)`;
+            useOfFundsError.style.display = 'block';
+        } else {
+            useOfFundsError.style.display = 'none';
+        }
+        }
+    }
+
+    function updateCurrencySymbols() {
+        const selectedCurrency = currencySelect.value;
+        const symbol = currencySymbols[selectedCurrency] || '₦';
+        
+        // Update all currency symbols in the form
+        const currencySymbolElements = document.querySelectorAll('.currency-symbol');
+        if (currencySymbolElements.length > 0) {
+            currencySymbolElements.forEach(span => {
+                span.textContent = symbol;
+            });
+        }
+        
+        // Update placeholders with new currency
+        const amountInputs = document.querySelectorAll('.use-of-funds-amount');
+        if (amountInputs.length > 0) {
+            amountInputs.forEach(input => {
+                input.placeholder = `Amount in ${selectedCurrency}`;
+            });
+        }
+        
+        // Update valuation info with new currency
+        updateValuationInfo();
+    }
+
+    function updateUseOfFundsAmounts() {
+        const fundingGoal = parseFloat(fundingGoalInput.value.replace(/,/g, '')) || 0;
+        const selectedCurrency = currencySelect.value;
+        
+        document.querySelectorAll('.use-of-funds-row').forEach(row => {
+            const percentageInput = row.querySelector('.use-of-funds-percentage');
+            const amountInput = row.querySelector('.use-of-funds-amount');
+            const percentage = parseFloat(percentageInput.value) || 0;
+            
+            // Calculate new amount based on percentage and funding goal
+            const amount = (percentage / 100) * fundingGoal;
+            amountInput.value = formatCurrency(amount, selectedCurrency);
+        });
+    }
+
+    function setupRowEventListeners(row) {
+        const amountInput = row.querySelector('.use-of-funds-amount');
+        const categoryInput = row.querySelector('.use-of-funds-category');
+        const removeButton = row.querySelector('.remove-fund-row');
+
+        if (amountInput) {
+            amountInput.placeholder = `Amount in ${currencySelect.value}`;
+            amountInput.addEventListener('input', updatePercentages);
+            amountInput.addEventListener('blur', () => {
+                const value = parseFloat(amountInput.value.replace(/,/g, '')) || 0;
+                if (value > 0) {
+                    amountInput.value = formatCurrency(value, currencySelect.value);
+                }
+                updatePercentages();
+            });
+        }
+
+        if (categoryInput) {
+            categoryInput.addEventListener('input', updatePercentages);
+        }
+
+        if (removeButton) {
+            removeButton.addEventListener('click', () => {
+                row.remove();
+                toggleRemoveButtons();
+                updatePercentages();
+            });
+        }
+    }
+    
+    function addFundRow() {
+        const row = document.querySelector('.use-of-funds-row').cloneNode(true);
+        row.querySelectorAll('input').forEach(input => input.value = '');
+        setupRowEventListeners(row);
+        
+        const container = document.getElementById('use-of-funds-container');
+        container.appendChild(row);
+        
+        toggleRemoveButtons();
+    }
+
+    function validateFundingGoal() {
+        const value = parseFloat(fundingGoalInput.value.replace(/,/g, '')) || 0;
+        const selectedCurrency = currencySelect.value;
+        const limit = currencyLimits[selectedCurrency];
+        
+        if (value > limit) {
+            fundingGoalInput.setCustomValidity(`Maximum funding goal for ${selectedCurrency} is ${currencySymbols[selectedCurrency]}${limit.toLocaleString()}`);
+            return false;
+        }
+        fundingGoalInput.setCustomValidity('');
+        return true;
+    }
+
+    function validatePercentages() {
+        const availablePerc = parseFloat(availablePercentageInput.value) || 0;
+        const minInvestPerc = parseFloat(minInvestmentInput.value) || 0;
+        const equityPerc = parseFloat(equityPercentageInput.value) || 0;
+        
+        if (minInvestPerc > availablePerc) {
+            minInvestmentInput.setCustomValidity('Minimum investment cannot exceed available percentage');
+            return false;
+        }
+        
+        if (availablePerc > equityPerc) {
+            availablePercentageInput.setCustomValidity('Available percentage cannot exceed total equity percentage');
+            return false;
+        }
+        
+        minInvestmentInput.setCustomValidity('');
+        availablePercentageInput.setCustomValidity('');
+        return true;
+    }
+
+    function validateFundingEndDate() {
+        const endDate = new Date(fundingEndDateInput.value);
+        const now = new Date();
+        
+        if (endDate <= now) {
+            fundingEndDateInput.setCustomValidity('Funding end date must be in the future');
+            return false;
+        }
+        fundingEndDateInput.setCustomValidity('');
+        return true;
+    }
+
+    function updateValuationInfo() {
+        const fundingGoal = parseFloat(fundingGoalInput.value.replace(/,/g, '')) || 0;
+        const availablePerc = parseFloat(availablePercentageInput.value) || 0;
+        const equityPerc = parseFloat(equityPercentageInput.value) || 0;
+        const selectedCurrency = currencySelect.value;
+        const symbol = currencySymbols[selectedCurrency] || '₦';
+        
+        if (fundingGoal && availablePerc && equityPerc) {
+            const pricePerPercentage = fundingGoal / availablePerc;
+            const companyValuation = (fundingGoal / availablePerc) * 100;
+            const retainedPercentage = 100 - availablePerc;
+            
+            const valuationElement = document.getElementById('company_valuation');
+            const pricePerPercentageElement = document.getElementById('price_per_percentage');
+            const retainedPercentageElement = document.getElementById('retained_percentage');
+            const pricePerPercentageInput = document.getElementById('id_price_per_percentage');
+            
+            if (valuationElement) {
+                valuationElement.textContent = symbol + companyValuation.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+            
+            if (pricePerPercentageElement) {
+                pricePerPercentageElement.textContent = symbol + pricePerPercentage.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+            
+            if (retainedPercentageElement) {
+                retainedPercentageElement.textContent = retainedPercentage.toFixed(2);
+            }
+
+            // Update the hidden price_per_percentage input
+            if (pricePerPercentageInput) {
+                pricePerPercentageInput.value = pricePerPercentage.toFixed(2);
+            }
+        }
+    }
+
+    function validateUseOfFunds() {
+        const rows = document.querySelectorAll('.use-of-funds-row');
+        const useOfFundsData = {};
+        let totalPercentage = 0;
+        let hasEmptyCategory = false;
+        let hasDuplicateCategory = false;
+        
+        rows.forEach(row => {
+            const category = row.querySelector('.use-of-funds-category').value.trim();
+            const percentageStr = row.querySelector('.use-of-funds-percentage').value;
+            const percentage = parseFloat(percentageStr.replace(/[%,]/g, '')) || 0;
+            
+            if (category === '') {
+                if (percentage > 0) {
+                    hasEmptyCategory = true;
+                }
+            } else if (useOfFundsData[category]) {
+                hasDuplicateCategory = true;
+            } else if (percentage > 0) {
+                useOfFundsData[category] = percentage;
+                totalPercentage += percentage;
+            }
+        });
+        
+        if (hasEmptyCategory) {
+            useOfFundsInput.setCustomValidity('Categories must be filled for non-zero percentages');
+            return false;
+        }
+        
+        if (hasDuplicateCategory) {
+            useOfFundsInput.setCustomValidity('Duplicate categories are not allowed');
+            return false;
+        }
+        
+        if (Object.keys(useOfFundsData).length === 0) {
+            useOfFundsInput.setCustomValidity('At least one category with funding must be specified');
+            return false;
+        }
+        
+        if (Math.abs(totalPercentage - 100) > 0.1) {
+            useOfFundsInput.setCustomValidity(`Total must be 100% (current: ${totalPercentage.toFixed(2)}%)`);
+            return false;
+        }
+        
+        useOfFundsInput.value = JSON.stringify(useOfFundsData);
+        useOfFundsInput.setCustomValidity('');
+        
+        // For debugging
+        console.log('Use of Funds Data:', useOfFundsData);
+        console.log('JSON String:', useOfFundsInput.value);
+        
+        return true;
+    }
+
+    // Function to update hidden fields
+    function updateHiddenFields() {
+        const pricePerPercentageInput = document.getElementById('id_price_per_percentage');
+        const useOfFundsInput = document.getElementById('id_use_of_funds');
+        
+        if (pricePerPercentageInput) {
+            const fundingGoal = parseFloat(fundingGoalInput.value.replace(/,/g, '')) || 0;
+            const availablePerc = parseFloat(availablePercentageInput.value) || 0;
+            if (fundingGoal && availablePerc) {
+                const pricePerPercentage = fundingGoal / availablePerc;
+                pricePerPercentageInput.value = pricePerPercentage.toFixed(2);
+            }
+        }
+        
+        if (useOfFundsInput) {
+            const useOfFundsData = {};
+            document.querySelectorAll('.use-of-funds-row').forEach(row => {
+                const category = row.querySelector('.use-of-funds-category').value.trim();
+                const percentageStr = row.querySelector('.use-of-funds-percentage').value;
+                const percentage = parseFloat(percentageStr.replace(/[%,]/g, '')) || 0;
+                if (category && percentage > 0) {
+                    useOfFundsData[category] = parseFloat(percentage.toFixed(2));
+                }
+            });
+            useOfFundsInput.value = JSON.stringify(useOfFundsData);
+        }
+    }
+
+    // Initialize the first row
+    const initialRow = document.querySelector('.use-of-funds-row');
+    if (initialRow) {
+        setupRowEventListeners(initialRow);
+    }
+
+    // Add event listeners
+    if (addFundRowButton) {
+        addFundRowButton.addEventListener('click', addFundRow);
+    }
+
+    // Add other event listeners
+    fundingGoalInput.addEventListener('input', () => {
+        validateFundingGoal();
+        updateValuationInfo();
+        updateUseOfFundsAmounts();
+        updateHiddenFields();
+    });
+    
+    availablePercentageInput.addEventListener('input', () => {
+        validatePercentages();
+        updateValuationInfo();
+        updateHiddenFields();
+    });
+    
+    minInvestmentInput.addEventListener('input', validatePercentages);
+    equityPercentageInput.addEventListener('input', () => {
+        validatePercentages();
+        updateValuationInfo();
+    });
+    
+    fundingEndDateInput.addEventListener('input', validateFundingEndDate);
+    currencySelect.addEventListener('change', () => {
+        validateFundingGoal();
+        updateCurrencySymbols();
+        updateUseOfFundsAmounts();
+    });
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default submission first
+        
+        // Run all validations
+        const isValid = validateFundingGoal() && 
+                       validatePercentages() && 
+                       validateFundingEndDate() && 
+                       validateUseOfFunds();
+        
+        if (!isValid) {
+            form.classList.add('was-validated');
+            return;
+        }
+        
+        // Update the use_of_funds data one final time
+        const useOfFundsData = {};
+        document.querySelectorAll('.use-of-funds-row').forEach(row => {
+            const category = row.querySelector('.use-of-funds-category').value.trim();
+            const percentageStr = row.querySelector('.use-of-funds-percentage').value;
+            const percentage = parseFloat(percentageStr.replace(/[%,]/g, '')) || 0;
+            if (category && percentage > 0) {
+                useOfFundsData[category] = parseFloat(percentage.toFixed(2));
+            }
+        });
+        
+        // Final validation checks
+        const totalPercentage = Object.values(useOfFundsData).reduce((sum, val) => sum + val, 0);
+        if (Math.abs(totalPercentage - 100) > 0.1) {
+            useOfFundsInput.setCustomValidity(`Total must be 100% (current: ${totalPercentage.toFixed(2)}%)`);
+            form.classList.add('was-validated');
+            return;
+        }
+        
+        // Set the final JSON data
+        useOfFundsInput.value = JSON.stringify(useOfFundsData);
+        
+        // Update price_per_percentage one final time
+        updateValuationInfo();
+        
+        // Log form data for debugging
+        console.log('Form Data:', {
+            fundingGoal: fundingGoalInput.value,
+            availablePercentage: availablePercentageInput.value,
+            minInvestmentPercentage: minInvestmentInput.value,
+            equityPercentage: equityPercentageInput.value,
+            pricePerPercentage: document.getElementById('id_price_per_percentage').value,
+            useOfFunds: useOfFundsInput.value
+        });
+        
+        // Submit the form
+        form.classList.add('was-validated');
+        form.submit();
+    });
+    
+    // Initialize
+    updateCurrencySymbols();
+    toggleRemoveButtons();
+    updateUseOfFundsAmounts();
+});
+</script>
+{% endblock %}
+{% endblock %} 

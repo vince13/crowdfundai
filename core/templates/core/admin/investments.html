@@ -1,0 +1,332 @@
+{% extends 'core/admin/base.html' %}
+{% load humanize %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Investment Records</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportToCSV()">
+                    <i class="bi bi-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Investments</h5>
+                    <h2 class="card-text">₦{{ total_invested|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Investors</h5>
+                    <h2 class="card-text">{{ investors|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Apps with Investments</h5>
+                    <h2 class="card-text">{{ apps|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Search investors or apps...">
+                </div>
+                <div class="col-md-3">
+                    <label for="app" class="form-label">Filter by App</label>
+                    <select class="form-select" id="app" name="app">
+                        <option value="">All Apps</option>
+                        {% for app in apps %}
+                            <option value="{{ app.id }}" {% if app_filter == app.id|stringformat:"s" %}selected{% endif %}>
+                                {{ app.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="investor" class="form-label">Filter by Investor</label>
+                    <select class="form-select" id="investor" name="investor">
+                        <option value="">All Investors</option>
+                        {% for investor in investors %}
+                            <option value="{{ investor.id }}" {% if investor_filter == investor.id|stringformat:"s" %}selected{% endif %}>
+                                {{ investor.get_full_name|default:investor.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Investment Records Table -->
+    <div class="card bg-dark">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover">
+                    <thead>
+                        <tr class="text-white">
+                            <th>Date</th>
+                            <th>Investor</th>
+                            <th>App</th>
+                            <th>Percentage</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Transaction</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for investment in investments %}
+                            <tr>
+                                <td class="text-white">
+                                    <span title="{{ investment.created_at|date:'Y-m-d H:i:s' }}">
+                                        {{ investment.created_at|date:"M d, Y H:i" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'core:admin_user_details' investment.investor.id %}" class="text-info text-decoration-none">
+                                        {{ investment.investor.get_full_name|default:investment.investor.username }}
+                                        <small class="text-secondary d-block">{{ investment.investor.email }}</small>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'core:app_detail' investment.app.id %}" class="text-info text-decoration-none">
+                                        {{ investment.app.name }}
+                                        <small class="text-secondary d-block">{{ investment.app.category }}</small>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        {{ investment.percentage_bought|floatformat:2 }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">₦{{ investment.amount_paid|intcomma }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">Completed</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <a href="#" class="text-info text-decoration-none me-2" data-bs-toggle="modal" data-bs-target="#transactionModal{{ investment.id }}">
+                                            <i class="bi bi-receipt"></i> {{ investment.transaction_id|truncatechars:10 }}
+                                        </a>
+                                        {% if investment.transaction.webhook_status == 'RECEIVED' %}
+                                            <span class="badge bg-success" title="Webhook Received">
+                                                <i class="bi bi-check-circle"></i>
+                                            </span>
+                                        {% elif investment.transaction.webhook_status == 'FAILED' %}
+                                            <span class="badge bg-danger" title="Webhook Failed">
+                                                <i class="bi bi-exclamation-circle"></i>
+                                            </span>
+                                        {% elif investment.transaction.webhook_status == 'RETRYING' %}
+                                            <span class="badge bg-warning" title="Webhook Retrying">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary" title="Webhook Pending">
+                                                <i class="bi bi-hourglass-split"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'core:app_detail' investment.app.id %}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-eye"></i> View App
+                                        </a>
+                                        <a href="{% url 'core:admin_user_details' investment.investor.id %}"
+                                           class="btn btn-sm btn-outline-light">
+                                            <i class="bi bi-person"></i> View Investor
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Transaction Details Modal -->
+                            <div class="modal fade" id="transactionModal{{ investment.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content bg-dark text-white">
+                                        <div class="modal-header border-secondary">
+                                            <h5 class="modal-title text-white">
+                                                <i class="bi bi-credit-card me-2"></i>Payment Details
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <!-- Payment Status -->
+                                                    <div class="alert alert-success bg-success text-white border-0 mb-3">
+                                                        <i class="bi bi-check-circle me-2"></i>
+                                                        <strong>Status:</strong> Payment Successful
+                                                    </div>
+                                                    
+                                                    <!-- Payment Information -->
+                                                    <h6 class="border-bottom border-secondary pb-2 mb-3 text-white">Payment Information</h6>
+                                                    <dl class="row text-white">
+                                                        <dt class="col-sm-5">Authorization Code</dt>
+                                                        <dd class="col-sm-7">
+                                                            <code class="bg-secondary text-white">{{ investment.transaction.authorization_code }}</code>
+                                                        </dd>
+
+                                                        <dt class="col-sm-5">Card Details</dt>
+                                                        <dd class="col-sm-7">
+                                                            {% if investment.transaction.card_type and investment.transaction.card_last4 %}
+                                                                {{ investment.transaction.card_type }} card ending in {{ investment.transaction.card_last4 }}
+                                                            {% else %}
+                                                                Not available
+                                                            {% endif %}
+                                                        </dd>
+
+                                                        <dt class="col-sm-5">Transaction ID</dt>
+                                                        <dd class="col-sm-7">
+                                                            <code class="bg-secondary text-white">{{ investment.transaction.gateway_transaction_id }}</code>
+                                                        </dd>
+
+                                                        <dt class="col-sm-5">Payment Time</dt>
+                                                        <dd class="col-sm-7">
+                                                            {{ investment.transaction.completed_at|date:"Y-m-d H:i:s" }}
+                                                        </dd>
+                                                    </dl>
+
+                                                    <!-- Investment Details -->
+                                                    <h6 class="border-bottom border-secondary pb-2 mb-3 mt-4 text-white">Investment Details</h6>
+                                                    <dl class="row text-white">
+                                                        <dt class="col-sm-5">Amount Invested</dt>
+                                                        <dd class="col-sm-7">
+                                                            <strong class="text-success">₦{{ investment.amount_paid|intcomma }}</strong>
+                                                        </dd>
+
+                                                        <dt class="col-sm-5">Equity Purchased</dt>
+                                                        <dd class="col-sm-7">
+                                                            <span class="badge bg-info">{{ investment.percentage_bought|floatformat:2 }}%</span>
+                                                        </dd>
+                                                    </dl>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <!-- Webhook Status -->
+                                                    <div class="alert {% if investment.transaction.webhook_status == 'RECEIVED' %}alert-success bg-success{% elif investment.transaction.webhook_status == 'FAILED' %}alert-danger bg-danger{% elif investment.transaction.webhook_status == 'RETRYING' %}alert-warning bg-warning text-dark{% else %}alert-secondary bg-secondary{% endif %} border-0 mb-3">
+                                                        {% if investment.transaction.webhook_status == 'RECEIVED' %}
+                                                            <i class="bi bi-check-circle me-2"></i>
+                                                            <strong>Webhook:</strong> Successfully Received
+                                                        {% elif investment.transaction.webhook_status == 'FAILED' %}
+                                                            <i class="bi bi-exclamation-circle me-2"></i>
+                                                            <strong>Webhook:</strong> Delivery Failed
+                                                        {% elif investment.transaction.webhook_status == 'RETRYING' %}
+                                                            <i class="bi bi-arrow-clockwise me-2"></i>
+                                                            <strong>Webhook:</strong> Retrying Delivery
+                                                        {% else %}
+                                                            <i class="bi bi-hourglass-split me-2"></i>
+                                                            <strong>Webhook:</strong> Pending Delivery
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <!-- Webhook Details -->
+                                                    <h6 class="border-bottom border-secondary pb-2 mb-3 text-white">Webhook Information</h6>
+                                                    <dl class="row text-white">
+                                                        <dt class="col-sm-5">Status</dt>
+                                                        <dd class="col-sm-7">
+                                                            <span class="badge {% if investment.transaction.webhook_status == 'RECEIVED' %}bg-success{% elif investment.transaction.webhook_status == 'FAILED' %}bg-danger{% elif investment.transaction.webhook_status == 'RETRYING' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                                {{ investment.transaction.webhook_status }}
+                                                            </span>
+                                                        </dd>
+
+                                                        <dt class="col-sm-5">Attempts</dt>
+                                                        <dd class="col-sm-7">{{ investment.transaction.webhook_attempts }}</dd>
+
+                                                        {% if investment.transaction.webhook_received_at %}
+                                                        <dt class="col-sm-5">Received At</dt>
+                                                        <dd class="col-sm-7">{{ investment.transaction.webhook_received_at|date:"Y-m-d H:i:s" }}</dd>
+                                                        {% endif %}
+
+                                                        {% if investment.transaction.last_webhook_attempt %}
+                                                        <dt class="col-sm-5">Last Attempt</dt>
+                                                        <dd class="col-sm-7">{{ investment.transaction.last_webhook_attempt|date:"Y-m-d H:i:s" }}</dd>
+                                                        {% endif %}
+                                                    </dl>
+
+                                                    {% if investment.transaction.webhook_logs %}
+                                                    <h6 class="border-bottom border-secondary pb-2 mb-3 mt-4 text-white">Webhook Logs</h6>
+                                                    <div class="webhook-logs" style="max-height: 150px; overflow-y: auto;">
+                                                        {% for log in investment.transaction.webhook_logs %}
+                                                        <div class="log-entry mb-2 p-2 bg-secondary rounded">
+                                                            <small>
+                                                                <strong>Attempt {{ log.attempt }}</strong> - 
+                                                                {{ log.timestamp|date:"Y-m-d H:i:s" }}<br>
+                                                                Status: 
+                                                                <span class="badge {% if log.success %}bg-success{% else %}bg-danger{% endif %}">
+                                                                    {% if log.success %}Success{% else %}Failed{% endif %}
+                                                                </span>
+                                                            </small>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-secondary">
+                                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center">No investments found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function exportToCSV() {
+    // Get the current URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Add export parameter
+    urlParams.append('export', 'csv');
+    
+    // Redirect to the same page with export parameter
+    window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+}
+
+// Auto-submit form when filters change
+document.querySelectorAll('select[name="app"], select[name="investor"]').forEach(select => {
+    select.addEventListener('change', () => {
+        select.closest('form').submit();
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

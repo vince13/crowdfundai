@@ -1,0 +1,32 @@
+{% if ad %}
+<div class="advertisement {% if ad.position == 'sidebar' %}sidebar-ad{% else %}main-ad{% endif %} mb-4">
+    {% if user.is_staff %}
+    <div class="admin-controls mb-2">
+        <span class="badge bg-info">Advertisement</span>
+        <a href="{% url 'core:ad_review' ad.pk %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-edit"></i> Manage
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="ad-content position-relative">
+        {% if ad.is_current %}
+            <a href="{% url 'core:ad_click' ad.pk %}" class="ad-link" target="_blank" rel="noopener">
+                {% if ad.image %}
+                    <img src="{{ ad.image.url }}" alt="{{ ad.title }}" class="img-fluid mb-2 rounded {% if ad.position == 'sidebar' %}w-100{% else %}w-100{% endif %}" 
+                         style="{% if ad.position == 'sidebar' %}max-width: 400px{% else %}max-width: 800px{% endif %}">
+                {% endif %}
+                {{ ad.content|safe }}
+            </a>
+        {% else %}
+            <div class="advertise-here text-center p-4 border rounded">
+                <h5>Advertise Here</h5>
+                <p class="mb-3">Reach our growing community of AI developers and investors.</p>
+                <a href="{% url 'core:ad_create' position=ad.position %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Create Advertisement
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %} 

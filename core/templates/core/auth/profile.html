@@ -1,0 +1,906 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<style>
+.profile-header {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.profile-picture {
+    border: 4px solid #fff;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    background: #fff;
+}
+
+.profile-picture:hover {
+    transform: scale(1.05);
+}
+
+.stats-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.security-status {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.security-status.strong {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.security-status.moderate {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.security-status.weak {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.nav-pills .nav-link {
+    color: #495057;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #f8f9fa;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #4b6cb7;
+    color: white;
+}
+
+.activity-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.activity-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.activity-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4b6cb7;
+    border: 2px solid #fff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="profile-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center text-md-start">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" 
+                         alt="Profile Picture" 
+                         class="rounded-circle profile-picture mb-3"
+                         style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <div class="rounded-circle profile-picture mb-3 d-flex align-items-center justify-content-center"
+                         style="width: 150px; height: 150px; background-color: #e9ecef;">
+                        <i class="bi bi-person" style="font-size: 4rem; color: #6c757d;"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+                <h2 class="mb-2">{{ user.get_full_name|default:user.username }}</h2>
+                <p class="mb-2"><i class="bi bi-envelope"></i> {{ user.email }}</p>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                    {% if user.is_email_verified %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verified</span>
+                    {% endif %}
+                    <span class="badge bg-secondary">Member since {{ user.date_joined|date:"M Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Left Sidebar - Navigation -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body p-2">
+                    <div class="nav flex-column nav-pills">
+                        <a class="nav-link active" href="#profile-info" data-bs-toggle="pill">
+                            <i class="bi bi-person-badge me-2"></i> Profile Information
+                        </a>
+                        <a class="nav-link" href="#security" data-bs-toggle="pill">
+                            <i class="bi bi-shield-lock me-2"></i> Security Settings
+                        </a>
+                        <a class="nav-link" href="#preferences" data-bs-toggle="pill">
+                            <i class="bi bi-gear me-2"></i> Preferences
+                        </a>
+                        <a class="nav-link" href="#activity" data-bs-toggle="pill">
+                            <i class="bi bi-clock-history me-2"></i> Recent Activity
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title text-light">Quick Stats</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-light">Last Login</span>
+                        <span class="text-secondary">{{ user.last_login|date:"M d, Y" }}</span>
+                    </div>
+                    {% if user.is_developer %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-light">Apps Created</span>
+                        <span class="text-secondary">{{ user.applisting_set.count }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.is_investor %}
+                    <div class="d-flex justify-content-between">
+                        <span class="text-light">Investments</span>
+                        <span class="text-secondary">{{ user.investment_set.count }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Profile Information Tab -->
+                <div class="tab-pane fade show active" id="profile-info">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Profile Information</h5>
+                            <button type="button" class="btn btn-primary btn-sm" id="editProfileBtn">
+                                <i class="bi bi-pencil me-2"></i>Edit Profile
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Profile Display View -->
+                            <div id="profileDisplay">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="text-muted">Full Name</label>
+                                        <p class="mb-0">{{ user.get_full_name|default:"Not set" }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-muted">Username</label>
+                                        <p class="mb-0">{{ user.username }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-muted">Email</label>
+                                        <p class="mb-0">{{ user.email }}</p>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="text-muted">Role</label>
+                                        <p class="mb-0">{{ user.get_role_display }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-muted">Member Since</label>
+                                        <p class="mb-0">{{ user.date_joined|date:"F j, Y" }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="text-muted">Profile Picture</label>
+                                        <p class="mb-0">
+                                            {% if user.profile_picture %}
+                                                <span class="text-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Uploaded
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="bi bi-x-circle me-1"></i>Not uploaded
+                                                </span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label class="text-muted">Bio</label>
+                                        <p class="mb-0">{{ user.bio|default:"No bio added yet." }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Profile Edit Form -->
+                            <div id="profileForm" style="display: none;">
+                                <form method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    {{ form|crispy }}
+                                    <div class="mt-3">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-check-circle me-2"></i>Save Changes
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" id="cancelEditBtn">
+                                            <i class="bi bi-x-circle me-2"></i>Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings Tab -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Security Overview</h5>
+                            <span class="security-status {% if user.two_factor_enabled %}strong{% else %}moderate{% endif %}">
+                                {% if user.two_factor_enabled %}
+                                    <i class="bi bi-shield-check me-1"></i>Strong
+                                {% else %}
+                                    <i class="bi bi-shield-exclamation me-1"></i>Moderate
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6>Password</h6>
+                                <p class="text-muted mb-3">Last changed: Never</p>
+                                <a href="{% url 'core:password_change' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-key me-2"></i>Change Password
+                                </a>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6>Two-Factor Authentication</h6>
+                                <p class="text-muted mb-3">
+                                    {% if user.two_factor_enabled %}
+                                        Enabled - Added extra security to your account
+                                    {% else %}
+                                        Not enabled - Recommended for better security
+                                    {% endif %}
+                                </p>
+                                {% if user.two_factor_enabled %}
+                                    <button class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-shield-x me-2"></i>Disable 2FA
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-shield-plus me-2"></i>Enable 2FA
+                                    </button>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <h6>Active Sessions</h6>
+                                <p class="text-muted mb-3">Manage your active login sessions</p>
+                                <button class="btn btn-outline-warning btn-sm">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Sign Out All Devices
+                                </button>
+                            </div>
+
+                            <hr>
+
+                            <div>
+                                <h6>Delete Account</h6>
+                                <p class="text-muted mb-3">Permanently delete your account and all associated data</p>
+                                <button class="btn btn-outline-danger btn-sm" id="deleteAccountBtn">
+                                    <i class="bi bi-trash me-2"></i>Delete Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferences Tab -->
+                <div class="tab-pane fade" id="preferences">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Preferences</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h6>Email Notifications</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="emailUpdates" checked>
+                                    <label class="form-check-label" for="emailUpdates">
+                                        App Updates & News
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="emailSecurity" checked>
+                                    <label class="form-check-label" for="emailSecurity">
+                                        Security Alerts
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="emailMarketing">
+                                    <label class="form-check-label" for="emailMarketing">
+                                        Marketing & Promotions
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h6>Display Settings</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Theme Preference</label>
+                                    <select class="form-select">
+                                        <option value="light">Light Mode</option>
+                                        <option value="dark">Dark Mode</option>
+                                        <option value="system">System Default</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Tab -->
+                <div class="tab-pane fade" id="activity">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-timeline">
+                                <div class="activity-item">
+                                    <small class="text-muted">Today</small>
+                                    <p class="mb-0">Updated profile information</p>
+                                </div>
+                                <div class="activity-item">
+                                    <small class="text-muted">Yesterday</small>
+                                    <p class="mb-0">Changed password</p>
+                                </div>
+                                <div class="activity-item">
+                                    <small class="text-muted">3 days ago</small>
+                                    <p class="mb-0">Logged in from new device</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2FA Setup Modal -->
+<div class="modal fade" id="setup2FAModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Up Two-Factor Authentication</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4" id="qrCodeContainer">
+                    <img id="qrCode" src="" alt="QR Code" class="mb-3" style="max-width: 200px;">
+                    <p class="text-muted small">Scan this QR code with your authenticator app</p>
+                </div>
+                <div class="mb-3">
+                    <label for="verificationCode" class="form-label">Enter Verification Code</label>
+                    <input type="text" class="form-control" id="verificationCode" 
+                           placeholder="Enter the 6-digit code">
+                </div>
+                <div id="setup2FAError" class="alert alert-danger" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="verify2FABtn">
+                    Verify and Enable
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Disable 2FA Modal -->
+<div class="modal fade" id="disable2FAModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Disable Two-Factor Authentication</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Warning: This will make your account less secure.
+                </p>
+                <div class="mb-3">
+                    <label for="disable2FAPassword" class="form-label">Confirm your password</label>
+                    <input type="password" class="form-control" id="disable2FAPassword" 
+                           placeholder="Enter your password">
+                </div>
+                <div id="disable2FAError" class="alert alert-danger" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDisable2FABtn">
+                    Disable 2FA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sign Out All Devices Modal -->
+<div class="modal fade" id="signOutAllModal" tabindex="-1" aria-labelledby="signOutAllModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="signOutAllModalLabel">Sign Out All Devices</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action will sign you out from all devices where you are currently logged in.
+                </div>
+                <p>You will need to log in again on all devices after this action.</p>
+                <div class="alert alert-danger" id="signOutAllError" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmSignOutAllBtn">
+                    <i class="bi bi-box-arrow-right me-2"></i>Sign Out All Devices
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone.
+                </div>
+                <p>Deleting your account will:</p>
+                <ul class="text-muted">
+                    <li>Permanently remove all your personal information</li>
+                    <li>Delete all your apps and investments</li>
+                    <li>Remove your access to the platform</li>
+                </ul>
+                <div class="mb-3">
+                    <label for="deleteAccountPassword" class="form-label">Confirm your password</label>
+                    <input type="password" class="form-control" id="deleteAccountPassword" 
+                           placeholder="Enter your password">
+                </div>
+                <div class="mb-3">
+                    <label for="deleteAccountReason" class="form-label">Please tell us why you're leaving (optional)</label>
+                    <textarea class="form-control" id="deleteAccountReason" rows="3" 
+                              placeholder="Your feedback helps us improve"></textarea>
+                </div>
+                <div class="alert alert-danger" id="deleteAccountError" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteAccountBtn">
+                    <i class="bi bi-trash me-2"></i>Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle tab navigation
+    const pills = document.querySelectorAll('.nav-pills .nav-link');
+    pills.forEach(pill => {
+        pill.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = pill.getAttribute('href');
+            document.querySelector('.nav-pills .nav-link.active').classList.remove('active');
+            document.querySelector('.tab-pane.active').classList.remove('show', 'active');
+            pill.classList.add('active');
+            document.querySelector(target).classList.add('show', 'active');
+        });
+    });
+
+    // Handle profile edit functionality
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const profileDisplay = document.getElementById('profileDisplay');
+    const profileForm = document.getElementById('profileForm');
+
+    editProfileBtn.addEventListener('click', () => {
+        profileDisplay.style.display = 'none';
+        profileForm.style.display = 'block';
+        editProfileBtn.style.display = 'none';
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+        profileDisplay.style.display = 'block';
+        profileForm.style.display = 'none';
+        editProfileBtn.style.display = 'inline-block';
+    });
+
+    const enable2FABtn = document.querySelector('.btn-outline-success');
+    const disable2FABtn = document.querySelector('.btn-outline-danger');
+    const setup2FAModal = new bootstrap.Modal(document.getElementById('setup2FAModal'));
+    const verify2FABtn = document.getElementById('verify2FABtn');
+    const verificationCode = document.getElementById('verificationCode');
+    const errorDiv = document.getElementById('setup2FAError');
+
+    // Helper function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    if (enable2FABtn) {
+        enable2FABtn.addEventListener('click', async function(e) {
+            e.preventDefault(); // Prevent any default behavior
+            e.stopPropagation(); // Stop event propagation
+            console.log('Enable 2FA button clicked');
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                console.log('Using CSRF Token:', csrfToken);
+                
+                const response = await fetch('/api/v1/auth/setup-2fa/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                console.log('Response status:', response.status);
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Received non-JSON response:', await response.text());
+                    throw new Error('Received non-JSON response from server');
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Server error:', errorData);
+                    throw new Error(errorData.error || 'Failed to initiate 2FA setup');
+                }
+
+                const data = await response.json();
+                console.log('2FA setup successful, showing QR code');
+                document.getElementById('qrCode').src = `data:image/png;base64,${data.qr_code}`;
+                setup2FAModal.show();
+            } catch (error) {
+                console.error('Error setting up 2FA:', error);
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
+
+    if (verify2FABtn) {
+        verify2FABtn.addEventListener('click', async function() {
+            const code = verificationCode.value.trim();
+            if (!code) {
+                errorDiv.textContent = 'Please enter the verification code';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Get CSRF token from the meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                console.log('Using CSRF Token for verification:', csrfToken);
+
+                const response = await fetch('/api/v1/auth/verify-2fa-setup/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ code }),
+                    credentials: 'include'
+                });
+
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Failed to parse JSON response:', e);
+                    throw new Error('Invalid response from server');
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to verify 2FA code');
+                }
+
+                // Success - reload the page to show updated 2FA status
+                window.location.reload();
+            } catch (error) {
+                console.error('Error verifying 2FA:', error);
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        });
+    }
+
+    if (disable2FABtn) {
+        const disable2FAModal = new bootstrap.Modal(document.getElementById('disable2FAModal'));
+        const confirmDisable2FABtn = document.getElementById('confirmDisable2FABtn');
+        const disable2FAPassword = document.getElementById('disable2FAPassword');
+        const disable2FAError = document.getElementById('disable2FAError');
+
+        disable2FABtn.addEventListener('click', function() {
+            disable2FAModal.show();
+        });
+
+        confirmDisable2FABtn.addEventListener('click', async function() {
+            const password = disable2FAPassword.value.trim();
+            if (!password) {
+                disable2FAError.textContent = 'Please enter your password';
+                disable2FAError.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Get CSRF token from the meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                console.log('Using CSRF Token for disabling 2FA:', csrfToken);
+
+                const response = await fetch('/api/v1/auth/disable-2fa/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        password,
+                        username: '{{ user.username }}'  // Include username instead of email
+                    }),
+                    credentials: 'include'
+                });
+
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to disable 2FA';
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        console.error('Failed to parse error response:', e);
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                // Success - close modal and reload the page
+                disable2FAModal.hide();
+                window.location.reload();
+            } catch (error) {
+                console.error('Error disabling 2FA:', error);
+                disable2FAError.textContent = error.message;
+                disable2FAError.style.display = 'block';
+            }
+        });
+
+        // Clear error when modal is hidden
+        document.getElementById('disable2FAModal').addEventListener('hidden.bs.modal', function () {
+            disable2FAError.style.display = 'none';
+            disable2FAPassword.value = '';
+        });
+    }
+
+    // Handle sign out all devices
+    const signOutAllBtn = document.querySelector('.btn-outline-warning');
+    if (signOutAllBtn) {
+        const signOutAllModal = new bootstrap.Modal(document.getElementById('signOutAllModal'));
+        const confirmSignOutAllBtn = document.getElementById('confirmSignOutAllBtn');
+        const signOutAllError = document.getElementById('signOutAllError');
+
+        signOutAllBtn.addEventListener('click', function() {
+            signOutAllModal.show();
+        });
+
+        confirmSignOutAllBtn.addEventListener('click', async function() {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                console.log('Attempting to sign out from all devices...');
+                console.log('CSRF Token:', csrfToken);
+                
+                const response = await fetch('/api/v1/auth/signout-all-devices/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to sign out from all devices';
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        console.error('Failed to parse error response:', e);
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                console.log('Successfully signed out, redirecting to login page...');
+                // Redirect to login page
+                window.location.href = '{% url "core:login" %}';
+            } catch (error) {
+                console.error('Error signing out from all devices:', error);
+                signOutAllError.textContent = error.message;
+                signOutAllError.style.display = 'block';
+            }
+        });
+
+        // Clear error when modal is hidden
+        document.getElementById('signOutAllModal').addEventListener('hidden.bs.modal', function () {
+            signOutAllError.style.display = 'none';
+        });
+    }
+
+    // Handle account deletion
+    const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+    if (deleteAccountBtn) {
+        const deleteAccountModal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
+        const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+        const deleteAccountPassword = document.getElementById('deleteAccountPassword');
+        const deleteAccountReason = document.getElementById('deleteAccountReason');
+        const deleteAccountError = document.getElementById('deleteAccountError');
+
+        deleteAccountBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent any default behavior
+            e.stopPropagation(); // Stop event propagation
+            deleteAccountModal.show();
+        });
+
+        confirmDeleteAccountBtn.addEventListener('click', async function() {
+            // Clear previous error
+            deleteAccountError.style.display = 'none';
+            
+            const password = deleteAccountPassword.value.trim();
+            if (!password) {
+                deleteAccountError.textContent = 'Please enter your password to confirm account deletion';
+                deleteAccountError.style.display = 'block';
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                console.log('Attempting to delete account...');
+                
+                const response = await fetch('/api/v1/auth/delete-account/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        password,
+                        username: '{{ user.username }}',  // Include username for authentication
+                        reason: deleteAccountReason.value.trim()
+                    }),
+                    credentials: 'include'
+                });
+
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Failed to parse error response:', e);
+                    throw new Error('Server returned an invalid response');
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to delete account');
+                }
+
+                // Success - show success message and redirect
+                deleteAccountError.className = 'alert alert-success';
+                deleteAccountError.textContent = 'Account successfully deleted. Redirecting...';
+                deleteAccountError.style.display = 'block';
+                
+                // Disable the confirm button to prevent multiple clicks
+                confirmDeleteAccountBtn.disabled = true;
+                
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = '{% url "core:home" %}';
+                }, 2000);
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                deleteAccountError.className = 'alert alert-danger';
+                deleteAccountError.textContent = error.message;
+                deleteAccountError.style.display = 'block';
+            }
+        });
+
+        // Clear error and inputs when modal is hidden
+        document.getElementById('deleteAccountModal').addEventListener('hidden.bs.modal', function () {
+            deleteAccountError.style.display = 'none';
+            deleteAccountError.className = 'alert alert-danger';
+            deleteAccountPassword.value = '';
+            deleteAccountReason.value = '';
+            confirmDeleteAccountBtn.disabled = false;
+        });
+    }
+});
+</script>
+{% endblock %} 

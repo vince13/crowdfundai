@@ -1,0 +1,73 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+{% load rule_filters %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/rules.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">{{ rule.id|yesno:"Edit,Create" }} Rule</h1>
+        <a href="{% url 'core:rules_dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Rules
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Rule Type</label>
+                    <input type="text" class="form-control" value="{{ rule.get_rule_type_display }}" readonly>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" name="name" value="{{ rule.name }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Value (JSON)</label>
+                    <textarea class="form-control" name="value" rows="10" required>{{ rule.value|default:"{}"|json_pretty }}</textarea>
+                    <div class="form-text">Enter the rule value in valid JSON format.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" name="description" rows="3">{{ rule.description }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_active" id="is_active" 
+                               {% if rule.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">Active</label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary">Save Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add JSON validation on form submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        try {
+            const valueField = this.querySelector('[name="value"]');
+            JSON.parse(valueField.value);
+        } catch (error) {
+            e.preventDefault();
+            alert('Invalid JSON format in value field: ' + error.message);
+        }
+    });
+</script>
+{% endblock %} 

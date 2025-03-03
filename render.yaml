@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: crowdfund-ai
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn crowdfund_ai.wsgi:application --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: crowdfund-ai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: crowdfund-ai-redis
+          type: redis
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SECURE_SSL_REDIRECT
+        value: "true"
+      - key: SECURE_PROXY_SSL_HEADER
+        value: "true"
+
+  - type: redis
+    name: crowdfund-ai-redis
+    ipAllowList: []
+    plan: free
+
+databases:
+  - name: crowdfund-ai-db
+    databaseName: crowdfund_ai
+    user: crowdfund_ai
+    plan: free 

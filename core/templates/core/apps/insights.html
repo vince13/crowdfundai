@@ -1,0 +1,248 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load app_filters %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/insights.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>AI Insights for {{ app.name }}</h2>
+            
+            <!-- Technical Analysis -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Technical Analysis</h4>
+                    {% if assessment.technical_analysis %}
+                        <div class="tech-stack mt-3">
+                            <h6>Technology Stack</h6>
+                            <ul class="list-unstyled">
+                                {% for key, value in assessment.technical_analysis.stack.items %}
+                                    <li><small>{{ key|title }}: {{ value }}</small></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="feasibility mt-3">
+                            <h6>Feasibility Assessment</h6>
+                            <p class="small">{{ assessment.technical_analysis.feasibility }}</p>
+                        </div>
+                        
+                        <div class="timeline mt-3">
+                            <h6>Development Timeline</h6>
+                            <p class="small">{{ assessment.technical_analysis.timeline }}</p>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No technical analysis available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Market Analysis -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Market Analysis</h4>
+                    {% if assessment.market_analysis %}
+                        <div class="market-size mt-3">
+                            <h6>Market Size</h6>
+                            <p class="small">{{ assessment.market_analysis.market_size }}</p>
+                        </div>
+                        
+                        <div class="growth mt-3">
+                            <h6>Growth Potential</h6>
+                            <p class="small">{{ assessment.market_analysis.growth }}</p>
+                        </div>
+                        
+                        <div class="competition mt-3">
+                            <h6>Competition</h6>
+                            <p class="small">{{ assessment.market_analysis.competition }}</p>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No market analysis available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Team Analysis -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Team Analysis</h4>
+                    {% if assessment.team_analysis %}
+                        <div class="composition mt-3">
+                            <h6>Team Composition</h6>
+                            <p class="small">{{ assessment.team_analysis.composition }}</p>
+                        </div>
+                        
+                        <div class="expertise mt-3">
+                            <h6>Expertise</h6>
+                            <p class="small">{{ assessment.team_analysis.expertise }}</p>
+                        </div>
+                        
+                        <div class="completeness mt-3">
+                            <h6>Team Completeness</h6>
+                            <p class="small">{{ assessment.team_analysis.completeness }}</p>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No team analysis available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Financial Analysis -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Financial Analysis</h4>
+                    {% if assessment.financial_analysis %}
+                        <div class="revenue mt-3">
+                            <h6>Revenue Model</h6>
+                            <p class="small">{{ assessment.financial_analysis.revenue_model }}</p>
+                        </div>
+                        
+                        <div class="projections mt-3">
+                            <h6>Financial Projections</h6>
+                            <p class="small">{{ assessment.financial_analysis.projections }}</p>
+                        </div>
+                        
+                        <div class="funding mt-3">
+                            <h6>Funding Requirements</h6>
+                            <p class="small">{{ assessment.financial_analysis.funding }}</p>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No financial analysis available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Risk Analysis -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Risk Analysis</h4>
+                    {% if assessment.risk_analysis %}
+                        <div class="technical-risks mt-3">
+                            <h6>Technical Risks</h6>
+                            <ul class="list-unstyled">
+                                {% if assessment.risk_analysis.technical_risks|is_list %}
+                                    {% for risk in assessment.risk_analysis.technical_risks %}
+                                        <li><small>• {{ risk }}</small></li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li><small>• {{ assessment.risk_analysis.technical_risks }}</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="market-risks mt-3">
+                            <h6>Market Risks</h6>
+                            <ul class="list-unstyled">
+                                {% if assessment.risk_analysis.market_risks|is_list %}
+                                    {% for risk in assessment.risk_analysis.market_risks %}
+                                        <li><small>• {{ risk }}</small></li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li><small>• {{ assessment.risk_analysis.market_risks }}</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="operational-risks mt-3">
+                            <h6>Operational Risks</h6>
+                            <ul class="list-unstyled">
+                                {% if assessment.risk_analysis.operational_risks|is_list %}
+                                    {% for risk in assessment.risk_analysis.operational_risks %}
+                                        <li><small>• {{ risk }}</small></li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li><small>• {{ assessment.risk_analysis.operational_risks }}</small></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No risk analysis available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Overall Score -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Overall Assessment</h4>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <div class="score-card text-center">
+                                <h6>Innovation Score</h6>
+                                <div class="display-4">{{ assessment.innovation_score|default:0|floatformat:1 }}</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ assessment.innovation_score|default:0 }}%" 
+                                         aria-valuenow="{{ assessment.innovation_score|default:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="score-card text-center">
+                                <h6>Market Potential</h6>
+                                <div class="display-4">{{ assessment.market_potential_score|default:0|floatformat:1 }}</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ assessment.market_potential_score|default:0 }}%" 
+                                         aria-valuenow="{{ assessment.market_potential_score|default:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="score-card text-center">
+                                <h6>Execution Capability</h6>
+                                <div class="display-4">{{ assessment.execution_capability_score|default:0|floatformat:1 }}</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ assessment.execution_capability_score|default:0 }}%" 
+                                         aria-valuenow="{{ assessment.execution_capability_score|default:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="score-card text-center">
+                                <h6>Overall Score</h6>
+                                <div class="display-4">{{ assessment.overall_score|default:0|floatformat:1 }}</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ assessment.overall_score|default:0 }}%" 
+                                         aria-valuenow="{{ assessment.overall_score|default:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Insights -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>AI Insights & Recommendations</h4>
+                    {% if assessment.ai_insights %}
+                        <div class="insights mt-3">
+                            {{ assessment.ai_insights|linebreaks }}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No AI insights available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

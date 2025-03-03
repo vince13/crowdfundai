@@ -1,0 +1,133 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Apps For Sale{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Apps For Sale</h1>
+        {% if user.is_authenticated and user.is_developer or user.is_staff %}
+        <a href="{% url 'core:app_for_sale_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>List Your App For Sale
+        </a>
+        {% endif %}
+    </div>
+
+    {% if apps %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for app in apps %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-shadow transition-all d-flex flex-column">
+                <div class="card-body p-4 d-flex flex-column">
+                    <!-- Header Section -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title h4 mb-0">{{ app.name }}</h5>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">
+                            <i class="bi bi-tag-fill me-1"></i>For Sale
+                        </span>
+                    </div>
+                    
+                    <!-- Category Badge -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3">
+                            <i class="bi bi-tag-fill me-1"></i>
+                            {{ app.get_category_display }}
+                        </span>
+                    </div>
+                    
+                    <!-- Description with preserved line breaks -->
+                    <p class="card-text text-secondary mb-4">
+                        {{ app.description|truncatewords:30 }}
+                    </p>
+                    
+                    <!-- Price and Stats Section -->
+                    <div class="mb-4 border rounded-3 p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Sale Price:</span>
+                            <span class="h5 mb-0 text-success">{{ app.currency }} {{ app.sale_price|intcomma }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Monthly Revenue:</span>
+                            <span class="text-muted">{{ app.currency }} {{ app.monthly_revenue|default:0|intcomma }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Monthly Users:</span>
+                            <span class="text-muted">{{ app.monthly_users|default:0|intcomma }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Tech Stack Section -->
+                    <div class="mb-4">
+                        {% with tech_stack=app.tech_stack.technologies %}
+                        {% if tech_stack %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for tech in tech_stack %}
+                            <span class="badge bg-light text-dark border">{{ tech }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- Button Section - Always at bottom -->
+                    <div class="mt-auto">
+                        <a href="{% url 'core:app_detail' pk=app.pk %}" class="btn btn-primary w-100">
+                            <i class="bi bi-info-circle me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <h3 class="h4 text-muted mb-4">No apps for sale at the moment</h3>
+        {% if user.is_authenticated and user.is_developer or user.is_staff %}
+        <p class="text-muted">
+            Be the first to list your app for sale!
+            <a href="{% url 'core:app_for_sale_create' %}" class="text-primary">
+                List your app now
+            </a>
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Add these styles to ensure consistent card heights and button positioning */
+    .card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Preserve line breaks in description */
+    .card-text {
+        white-space: pre-line;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+    
+    /* Smooth hover effect */
+    .hover-shadow {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+{% endblock %} 

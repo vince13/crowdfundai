@@ -1,0 +1,135 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Create Dispute{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'core:dispute_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Disputes
+        </a>
+    </div>
+
+    <!-- Create Dispute Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">Create New Dispute</h1>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Transaction Selection -->
+                        <div class="mb-4">
+                            <label for="transaction_id" class="form-label">Select Transaction</label>
+                            <select name="transaction_id" id="transaction_id" class="form-select" required>
+                                <option value="">Choose a transaction...</option>
+                                {% for transaction in transactions %}
+                                <option value="{{ transaction.id }}" data-amount="{{ transaction.amount }}">
+                                    Transaction #{{ transaction.id }} - {{ transaction.app.name }}
+                                    ({{ transaction.get_transaction_type_display }})
+                                    - ₦{{ transaction.amount|floatformat:2|intcomma }}
+                                    - {{ transaction.created_at|date:"M d, Y H:i" }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Shows your transactions with ID, app name, type, amount, and date.
+                                {% if not transactions %}
+                                <div class="alert alert-info mt-2">
+                                    <i class="fas fa-info-circle"></i> You don't have any transactions yet.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Dispute Type -->
+                        <div class="mb-4">
+                            <label for="dispute_type" class="form-label">Dispute Type</label>
+                            <select name="dispute_type" id="dispute_type" class="form-select" required>
+                                <option value="">Select type...</option>
+                                {% for value, label in type_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="mb-4">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" name="title" id="title" class="form-control" 
+                                   placeholder="Brief description of the issue" required>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea name="description" id="description" class="form-control" 
+                                      rows="5" placeholder="Detailed description of the issue" required></textarea>
+                            <div class="form-text">
+                                Please provide as much detail as possible about the issue.
+                            </div>
+                        </div>
+
+                        <!-- Amount in Dispute -->
+                        <div class="mb-4">
+                            <label for="amount_in_dispute" class="form-label">Amount in Dispute (₦)</label>
+                            <input type="number" name="amount_in_dispute" id="amount_in_dispute" 
+                                   class="form-control" step="0.01" min="0">
+                            <div class="form-text">
+                                Leave blank if disputing the entire transaction amount.
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Dispute
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Guidelines Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Dispute Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">
+                        <h6 class="alert-heading">Before submitting a dispute:</h6>
+                        <ul class="mb-0">
+                            <li>Make sure you have all relevant transaction details</li>
+                            <li>Attempt to resolve the issue with the other party first</li>
+                            <li>Gather any evidence that supports your case</li>
+                            <li>Be specific and clear in describing the issue</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-populate amount in dispute when transaction is selected
+    document.getElementById('transaction_id').addEventListener('change', function() {
+        const select = this;
+        const option = select.options[select.selectedIndex];
+        if (option.value) {
+            const amount = option.dataset.amount;
+            document.getElementById('amount_in_dispute').value = amount;
+        } else {
+            document.getElementById('amount_in_dispute').value = '';
+        }
+    });
+</script>
+{% endblock %} 

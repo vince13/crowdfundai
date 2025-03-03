@@ -1,0 +1,176 @@
+{% extends 'core/admin/base.html' %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Advanced Subscription Analytics</h2>
+
+    <!-- Churn Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Churn Metrics (Last {{ churn_metrics.period_days }} Days)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <small class="text-muted">Total Subscribers (Start)</small>
+                            <h3>{{ churn_metrics.total_subscribers_start }}</h3>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <small class="text-muted">Churned Subscribers</small>
+                            <h3>{{ churn_metrics.churned_subscribers }}</h3>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h4 class="{% if churn_metrics.churn_rate > 5 %}text-danger{% else %}text-success{% endif %}">
+                            {{ churn_metrics.churn_rate }}% Churn Rate
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Customer Lifetime Value</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Average Customer Lifetime</small>
+                        <h3>{{ clv_metrics.avg_customer_lifetime_days|floatformat:1 }} days</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Plan</th>
+                                    <th>Avg Lifetime</th>
+                                    <th>Avg Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plan in clv_metrics.clv_by_plan %}
+                                <tr>
+                                    <td>{{ plan.plan_name }}</td>
+                                    <td>{{ plan.avg_lifetime_months }} months</td>
+                                    <td>₦{{ plan.avg_revenue|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retention Metrics -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Cohort Retention Analysis</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Cohort</th>
+                            <th>Total Subscribers</th>
+                            <th>Retained Subscribers</th>
+                            <th>Retention Rate</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cohort in retention_metrics %}
+                        <tr>
+                            <td>{{ cohort.month }}</td>
+                            <td>{{ cohort.total_subscribers }}</td>
+                            <td>{{ cohort.retained_subscribers }}</td>
+                            <td>{{ cohort.retention_rate }}%</td>
+                            <td>
+                                {% if cohort.retention_rate >= 80 %}
+                                    <span class="badge bg-success">Excellent</span>
+                                {% elif cohort.retention_rate >= 60 %}
+                                    <span class="badge bg-warning">Good</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Needs Attention</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Growth Trends -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Growth Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="growthTrendsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Growth Trends Chart
+    const growthCtx = document.getElementById('growthTrendsChart').getContext('2d');
+    new Chart(growthCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for trend in growth_trends %}'{{ trend.month }}',{% endfor %}],
+            datasets: [
+                {
+                    label: 'New Subscribers',
+                    data: [{% for trend in growth_trends %}{{ trend.new_subscribers }},{% endfor %}],
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Churned Subscribers',
+                    data: [{% for trend in growth_trends %}{{ trend.churned_subscribers }},{% endfor %}],
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Net Growth',
+                    data: [{% for trend in growth_trends %}{{ trend.net_growth }},{% endfor %}],
+                    type: 'line',
+                    fill: false,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Monthly Growth Trends'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

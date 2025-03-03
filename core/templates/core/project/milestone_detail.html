@@ -1,0 +1,277 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block extra_css %}
+<style>
+    .deliverable-card {
+        transition: transform 0.2s;
+    }
+    .deliverable-card:hover {
+        transform: translateY(-2px);
+    }
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+    }
+    .update-item {
+        border-left: 3px solid #0d6efd;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    .update-item.milestone { border-left-color: #198754; }
+    .update-item.technical { border-left-color: #0dcaf0; }
+    .update-item.business { border-left-color: #ffc107; }
+    .update-item.team { border-left-color: #6f42c1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>{{ milestone.title }}</h2>
+            <p class="text-muted">{{ milestone.description }}</p>
+        </div>
+        <a href="{% url 'core:milestone_list' app.pk %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Milestones
+        </a>
+    </div>
+
+    <!-- Milestone Details -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ milestone.title }}</h5>
+                    <p class="card-text">{{ milestone.description }}</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Target Date:</strong> {{ milestone.target_date|date:"M d, Y" }}</p>
+                            <p><strong>Release Percentage:</strong> {{ milestone.release_percentage }}%</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge {% if milestone.status == 'COMPLETED' %}bg-success
+                                               {% elif milestone.status == 'IN_PROGRESS' %}bg-primary
+                                               {% elif milestone.status == 'VERIFICATION_REQUESTED' %}bg-info
+                                               {% elif milestone.status == 'VERIFIED' %}bg-success
+                                               {% elif milestone.status == 'REJECTED' %}bg-danger
+                                               {% else %}bg-secondary{% endif %}">
+                                    {{ milestone.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Progress:</strong></p>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ milestone.progress }}%"
+                                     aria-valuenow="{{ milestone.progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ milestone.progress }}%
+                                </div>
+                            </div>
+
+                            {% if user == app.developer and milestone.status == 'IN_PROGRESS' %}
+                                <form method="post" action="{% url 'core:update_milestone_progress' app.pk milestone.pk %}" class="mt-3">
+                                    {% csrf_token %}
+                                    <div class="input-group mb-3">
+                                        <input type="number" name="progress" class="form-control" 
+                                               value="{{ milestone.progress }}" min="0" max="100" 
+                                               required>
+                                        <span class="input-group-text">%</span>
+                                        <button type="submit" class="btn btn-primary">
+                                            Update Progress
+                                        </button>
+                                    </div>
+                                </form>
+                            {% endif %}
+
+                            {% if user == app.developer %}
+                                {% if milestone.status == 'IN_PROGRESS' and milestone.progress == 100 and milestone.release_percentage > 0 %}
+                                    <form method="post" action="{% url 'core:request_milestone_verification' app.pk milestone.pk %}" class="mt-3">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-check-circle"></i> Request Verification
+                                        </button>
+                                    </form>
+                                {% elif milestone.status == 'IN_PROGRESS' and milestone.progress == 100 and milestone.release_percentage <= 0 %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> This milestone has no funds allocated for release.
+                                    </div>
+                                {% elif milestone.status == 'VERIFICATION_REQUESTED' %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> Verification request is pending admin review.
+                                        {% if milestone.verification_requested_at %}
+                                            <br>
+                                            <small>Requested on: {{ milestone.verification_requested_at|date:"M d, Y H:i" }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% elif milestone.status == 'VERIFIED' %}
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle"></i> Milestone verified!
+                                        {% if milestone.verified_at %}
+                                            <br>
+                                            <small>Verified on: {{ milestone.verified_at|date:"M d, Y H:i" }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if user.is_staff and milestone.status == 'VERIFICATION_REQUESTED' %}
+                                <div class="card mt-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Admin Verification</h6>
+                                        <form method="post" action="{% url 'core:verify_milestone' app.pk milestone.pk %}">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="notes" class="form-label">Verification Notes</label>
+                                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                                          placeholder="Enter verification notes..."></textarea>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" name="action" value="verify" class="btn btn-success">
+                                                    <i class="fas fa-check"></i> Verify & Release Funds
+                                                </button>
+                                                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if milestone.verification_notes %}
+                        <div class="card mb-4">
+                            <div class="card-header bg-dark">
+                                <h6 class="mb-0 text-info">
+                                    <i class="fas fa-clipboard-check text-primary"></i> Verification Notes
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                            {{ milestone.verification_notes|linebreaks }}
+                            </div>
+                            {% if milestone.verified_by %}
+                            <div class="card-footer text-muted">
+                                <small>
+                                    Verified by: {{ milestone.verified_by.get_full_name|default:milestone.verified_by.username }}
+                                    {% if milestone.verified_at %}
+                                    on {{ milestone.verified_at|date:"M d, Y H:i" }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Deliverables -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="card-title mb-0">Deliverables</h5>
+                                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addDeliverableModal">
+                                            <i class="fas fa-plus"></i> Add Deliverable
+                                        </button>
+                                    </div>
+                                    
+                                    {% for deliverable in deliverables %}
+                                        <div class="card deliverable-card mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h6 class="card-title">{{ deliverable.title }}</h6>
+                                                        <p class="card-text text-muted">{{ deliverable.description }}</p>
+                                                        {% if deliverable.evidence_file or deliverable.evidence_link %}
+                                                            <div class="evidence-links mt-2">
+                                                                {% if deliverable.evidence_file %}
+                                                                    <a href="{{ deliverable.evidence_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                                                                        <i class="fas fa-file"></i> View Evidence File
+                                                                    </a>
+                                                                {% endif %}
+                                                                {% if deliverable.evidence_link %}
+                                                                    <a href="{{ deliverable.evidence_link }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                                                        <i class="fas fa-external-link-alt"></i> View External Evidence
+                                                                    </a>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <span class="badge {% if deliverable.status == 'COMPLETED' %}bg-success
+                                                              {% elif deliverable.status == 'IN_PROGRESS' %}bg-primary
+                                                              {% elif deliverable.status == 'BLOCKED' %}bg-danger
+                                                              {% else %}bg-secondary{% endif %}">
+                                                        {{ deliverable.get_status_display }}
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">
+                                                    Due: {{ deliverable.due_date }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <div class="alert alert-info">
+                                            No deliverables added yet. Click the button above to add one.
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Related Updates -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3">Related Updates</h5>
+                                    {% for update in milestone.updates.all %}
+                                        <div class="update-item {{ update.update_type|lower }} p-3 rounded mb-3 border">
+                                            <h6 class="text-primary">{{ update.title }}</h6>
+                                            <p class="mb-2 text-body">{{ update.content|linebreaks }}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-primary">{{ update.get_update_type_display }}</span>
+                                                <small class="text-muted">{{ update.created_at|date:"M d, Y" }}</small>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <div class="alert alert-info">
+                                            No updates related to this milestone yet.
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Deliverable Modal -->
+<div class="modal fade" id="addDeliverableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Deliverable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">Add Deliverable</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

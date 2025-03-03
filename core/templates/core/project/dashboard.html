@@ -1,0 +1,169 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .milestone-card {
+        transition: transform 0.2s;
+    }
+    .milestone-card:hover {
+        transform: translateY(-5px);
+    }
+    .progress {
+        height: 8px;
+    }
+    .tag {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        background-color: #e9ecef;
+        color: #495057;
+        margin: 0.25rem;
+        display: inline-block;
+    }
+    .update-item {
+        border-left: 3px solid #0d6efd;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    .update-item.milestone { border-left-color: #198754; }
+    .update-item.technical { border-left-color: #0dcaf0; }
+    .update-item.business { border-left-color: #ffc107; }
+    .update-item.team { border-left-color: #6f42c1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ app.name }} - Project Dashboard</h2>
+        <div>
+            <a href="{% url 'core:milestone_list' app.pk %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Milestone
+            </a>
+            <a href="{% url 'core:update_list' app.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-pen"></i> Post Update
+            </a>
+        </div>
+    </div>
+
+    <!-- Project Overview -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Project Status</h5>
+                    <p class="mb-2">
+                        <span class="badge bg-primary">{{ app.development_stage }}</span>
+                        <span class="badge bg-secondary ms-2">{{ app.project_status }}</span>
+                    </p>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" style="width: {{ app.progress }}%"
+                             aria-valuenow="{{ app.progress }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ app.progress }}%
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">
+                        <small>
+                            <i class="fas fa-clock"></i> 
+                            Est. Completion: {{ app.estimated_completion_date|default:"Not set" }}
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Tags</h5>
+                    <div class="mb-3">
+                        {% for app_tag in tags %}
+                            <span class="tag">{{ app_tag.tag.name }}</span>
+                        {% empty %}
+                            <p class="text-muted">No tags added yet</p>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'core:manage_tags' app.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-tags"></i> Manage Tags
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Milestones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Recent Milestones</h4>
+            <div class="row">
+                {% for milestone in milestones|slice:":3" %}
+                    <div class="col-md-4">
+                        <div class="card milestone-card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ milestone.title }}</h6>
+                                <p class="card-text small text-muted">{{ milestone.description|truncatewords:20 }}</p>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ milestone.progress }}%"
+                                         aria-valuenow="{{ milestone.progress }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge {% if milestone.status == 'COMPLETED' %}bg-success
+                                                      {% elif milestone.status == 'IN_PROGRESS' %}bg-primary
+                                                      {% elif milestone.status == 'DELAYED' %}bg-warning
+                                                      {% else %}bg-secondary{% endif %}">
+                                        {{ milestone.get_status_display }}
+                                    </span>
+                                    <small class="text-muted">Due: {{ milestone.target_date }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No milestones created yet. 
+                            <a href="{% url 'core:milestone_list' app.pk %}">Add your first milestone</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if milestones.count > 3 %}
+                <div class="text-center">
+                    <a href="{% url 'core:milestone_list' app.pk %}" class="btn btn-link">View all milestones</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Updates -->
+    <div class="row">
+        <div class="col-12">
+            <h4 class="mb-3">Recent Updates</h4>
+            {% for update in updates %}
+                <div class="update-item {{ update.update_type|lower }} bg-light p-3 rounded">
+                    <h6>{{ update.title }}</h6>
+                    <p class="mb-2">{{ update.content|linebreaks }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">{{ update.get_update_type_display }}</span>
+                        <small class="text-muted">{{ update.created_at|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">
+                    No updates posted yet. 
+                    <a href="{% url 'core:update_list' app.pk %}">Post your first update</a>
+                </div>
+            {% endfor %}
+            {% if updates.count > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'core:update_list' app.pk %}" class="btn btn-link">View all updates</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

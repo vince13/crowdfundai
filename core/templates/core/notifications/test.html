@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Test Notifications</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Send Test Notifications</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Investment Notification</h5>
+                            <p class="card-text">Test investment-related notifications</p>
+                            <button class="btn btn-primary send-notification" data-type="investment">
+                                Send Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Price Alert</h5>
+                            <p class="card-text">Test price change notifications</p>
+                            <button class="btn btn-primary send-notification" data-type="price">
+                                Send Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Milestone Alert</h5>
+                            <p class="card-text">Test milestone achievement notifications</p>
+                            <button class="btn btn-primary send-notification" data-type="milestone">
+                                Send Test
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('.send-notification');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const type = this.dataset.type;
+            
+            fetch('/notifications/test/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `type=${type}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log(`Test ${type} notification sent`);
+                }
+            });
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

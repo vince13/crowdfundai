@@ -1,0 +1,125 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/security.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Security Logs</h1>
+        <a href="{% url 'core:security_dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control" name="start_date" value="{{ request.GET.start_date }}">
+                        <span class="input-group-text">to</span>
+                        <input type="date" class="form-control" name="end_date" value="{{ request.GET.end_date }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Action Type</label>
+                    <select class="form-select" name="action_type">
+                        <option value="">All</option>
+                        {% for action in action_types %}
+                        <option value="{{ action }}" {% if request.GET.action_type == action %}selected{% endif %}>
+                            {{ action }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All</option>
+                        <option value="success" {% if request.GET.status == 'success' %}selected{% endif %}>Success</option>
+                        <option value="failure" {% if request.GET.status == 'failure' %}selected{% endif %}>Failure</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>IP Address</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                            <td>{{ log.user|default:"Anonymous" }}</td>
+                            <td>{{ log.action }}</td>
+                            <td>
+                                <span class="badge bg-{{ log.status|yesno:'success,danger' }}">
+                                    {{ log.status }}
+                                </span>
+                            </td>
+                            <td>{{ log.ip_address|default:"-" }}</td>
+                            <td>
+                                {% if log.details %}
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#detailsModal{{ log.id }}">
+                                    <i class="bi bi-info-circle"></i>
+                                </button>
+                                <!-- Details Modal -->
+                                <div class="modal fade" id="detailsModal{{ log.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Log Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <pre class="mb-0"><code>{{ log.details|pprint }}</code></pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No logs found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/security.js' %}"></script>
+{% endblock %} 

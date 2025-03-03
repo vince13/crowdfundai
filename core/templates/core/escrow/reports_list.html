@@ -1,0 +1,186 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="escrow-reports container py-4">
+    <h1 class="mb-4">Escrow Reports</h1>
+
+    <!-- Overall Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Overall Statistics</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Transactions:</span>
+                        <strong>{{ total_transactions }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Total in Escrow:</span>
+                        <strong>${{ total_in_escrow|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Transaction Statistics</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in transaction_stats %}
+                                <tr>
+                                    <td>{{ stat.transaction_type }}</td>
+                                    <td>{{ stat.count }}</td>
+                                    <td>${{ stat.total_amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispute Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Dispute Statistics</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in dispute_stats %}
+                                <tr>
+                                    <td>{{ stat.dispute_status }}</td>
+                                    <td>{{ stat.count }}</td>
+                                    <td>${{ stat.total_amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Milestone Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Milestone Statistics</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in milestone_stats %}
+                                <tr>
+                                    <td>{{ stat.status }}</td>
+                                    <td>{{ stat.count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps with Escrow -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Apps with Escrow Funds</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>App</th>
+                                    <th>Developer</th>
+                                    <th>Funds in Escrow</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in apps %}
+                                <tr>
+                                    <td>{{ app.name }}</td>
+                                    <td>{{ app.developer.email }}</td>
+                                    <td>${{ app.funds_in_escrow|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'core:escrow-reports-transaction-history' app.id %}" class="btn btn-sm btn-primary">View History</a>
+                                        <a href="{% url 'core:escrow-reports-monthly-report' app.id %}" class="btn btn-sm btn-info">Monthly Report</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.escrow-reports .card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.escrow-reports .card-title {
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.escrow-reports .table {
+    margin-bottom: 0;
+}
+
+.escrow-reports .table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.escrow-reports .btn-sm {
+    margin-right: 5px;
+}
+
+.escrow-reports .btn-sm:last-child {
+    margin-right: 0;
+}
+</style>
+{% endblock %} 

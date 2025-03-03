@@ -1,0 +1,65 @@
+{% extends 'core/admin/base.html' %}
+
+{% block admin_content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Project Requests</h1>
+        <div class="btn-group">
+            <a href="{% url 'core:admin_project_requests' %}" class="btn btn-outline-primary {% if not current_status %}active{% endif %}">
+                All
+            </a>
+            {% for status_code, status_label in statuses %}
+            <a href="{% url 'core:admin_project_requests' %}?status={{ status_code }}" 
+               class="btn btn-outline-primary {% if current_status == status_code %}active{% endif %}">
+                {{ status_label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Project Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                <tr>
+                    <td>{{ request.created_at|date:"M d, Y" }}</td>
+                    <td>{{ request.name }}</td>
+                    <td>{{ request.get_project_type_display }}</td>
+                    <td>
+                        <span class="badge {% if request.status == 'NEW' %}bg-primary
+                                         {% elif request.status == 'IN_REVIEW' %}bg-info
+                                         {% elif request.status == 'CONTACTED' %}bg-warning
+                                         {% elif request.status == 'ACCEPTED' %}bg-success
+                                         {% else %}bg-danger{% endif %}">
+                            {{ request.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'core:admin_project_request_detail' request.pk %}" 
+                           class="btn btn-sm btn-outline-primary">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4">
+                        <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                        No project requests found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

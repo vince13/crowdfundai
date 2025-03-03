@@ -1,0 +1,28 @@
+{% if app.ai_assessment %}
+<div class="mt-4">
+    <div class="d-flex align-items-center mb-3">
+        <i class="fas fa-lightbulb text-warning me-2"></i>
+        <h6 class="mb-0">AI Insights & Recommendations</h6>
+    </div>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            {% with insights=app.ai_assessment.ai_insights|linebreaks|safe %}
+                {% if insights %}
+                    <div class="insights-container">
+                        {{ insights }}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-info-circle fs-3 mb-3 d-block"></i>
+                        <p class="mb-0">No insights available at this time.</p>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mb-0">
+    AI assessment is being generated. Please check back later.
+</div>
+{% endif %} 

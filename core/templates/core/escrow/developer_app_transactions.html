@@ -1,0 +1,183 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load core_extras %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h2 class="mb-0">Escrow Transactions - {{ app.name }}</h2>
+        <a href="{% url 'core:developer-escrow' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Escrow Overview
+        </a>
+    </div>
+
+    <!-- App Summary Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12 col-md-4 mb-3 mb-md-0">
+                    <h5 class="card-title">Current Balance</h5>
+                    <div class="d-flex flex-column">
+                        <h3 class="text-primary mb-1">₦{{ app.funds_in_escrow|floatformat:2|intcomma }}</h3>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 mb-3 mb-md-0">
+                    <h5 class="card-title">Total Received</h5>
+                    <div class="d-flex flex-column">
+                        <h3 class="text-success mb-1">₦{{ app.total_received|default:"0"|floatformat:2|intcomma }}</h3>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <h5 class="card-title">Total Released</h5>
+                    <div class="d-flex flex-column">
+                        <h3 class="text-info mb-1">₦{{ app.total_released|multiply:0.95|default:"0"|floatformat:2|intcomma }}</h3>
+                        <small class="text-success">Net: ₦{{ app.total_released|multiply:0.95|default:"0"|floatformat:2|intcomma }} (after 5% fee)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Transaction History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>App Name</th>
+                            <th>Type</th>
+                            <th>Gross Amount</th>
+                            <th>Net Amount</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                            {% if app.has_milestones %}
+                            <th>Milestone</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions|dictsortreversed:"created_at" %}
+                        <tr>
+                            <td>{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'core:app_detail' transaction.app.id %}" class="text-decoration-none">
+                                    {{ transaction.app.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ transaction.transaction_type|lower }}">
+                                    {{ transaction.get_transaction_type_display }}
+                                </span>
+                            </td>
+                            <td>₦{{ transaction.amount|floatformat:2|intcomma }}</td>
+                            <td>
+                                {% if transaction.transaction_type == 'DEPOSIT' %}
+                                <span class="text-success">₦{{ transaction.amount|multiply:0.95|floatformat:2|intcomma }}</span>
+                                <small class="d-block text-muted">(after 5% fee)</small>
+                                {% else %}
+                                <span class="text-success">₦{{ transaction.amount|multiply:0.95|floatformat:2|intcomma }}</span>
+                                <small class="d-block text-muted">(after 5% fee)</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ transaction.status|lower }}">
+                                    {{ transaction.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.description|default:"-" }}</td>
+                            {% if app.has_milestones %}
+                            <td>
+                                {% if transaction.milestone %}
+                                <a href="{% url 'core:milestone_detail' app.id transaction.milestone.id %}" 
+                                   class="text-decoration-none">
+                                    {{ transaction.milestone.title }}
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if app.has_milestones %}6{% else %}5{% endif %}" class="text-center">
+                                No transactions found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge {
+    font-size: 0.8em;
+    padding: 0.4em 0.6em;
+}
+.badge.bg-deposit { background-color: #28a745; }
+.badge.bg-release { background-color: #17a2b8; }
+.badge.bg-milestone_release { background-color: #17a2b8; }
+.badge.bg-refund { background-color: #dc3545; }
+.badge.bg-pending { background-color: #ffc107; }
+.badge.bg-completed { background-color: #28a745; }
+.badge.bg-failed { background-color: #dc3545; }
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+    }
+
+    .table {
+        font-size: 0.875rem;
+    }
+
+    .badge {
+        font-size: 0.75em;
+        padding: 0.35em 0.5em;
+    }
+
+    .table > :not(caption) > * > * {
+        padding: 0.5rem 0.25rem;
+    }
+
+    .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        margin: 0 -1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    small {
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %} 

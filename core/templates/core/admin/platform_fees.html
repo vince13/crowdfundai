@@ -1,0 +1,227 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Platform Fee Management{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1>Platform Fee Management</h1>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <!-- Total Fees -->
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Fees</h5>
+                    <h2 class="mb-0">₦{{ total_fees.total|default:0|floatformat:2|intcomma }}</h2>
+                    <small>{{ total_fees.count|default:0|intcomma }} transactions</small>
+                </div>
+            </div>
+        </div>
+        <!-- Collection Rate -->
+        <div class="col-md-3">
+            <div class="card {% if collection_rate >= 90 %}bg-success{% elif collection_rate >= 70 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Collection Rate</h5>
+                    <h2 class="mb-0">{{ collection_rate|floatformat:1 }}%</h2>
+                    <small>of expected fees collected</small>
+                </div>
+            </div>
+        </div>
+        <!-- Pending Fees -->
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Fees</h5>
+                    <h2 class="mb-0">₦{{ stats.pending.total|default:0|floatformat:2|intcomma }}</h2>
+                    <small>{{ stats.pending.count|default:0|intcomma }} transactions</small>
+                </div>
+            </div>
+        </div>
+        <!-- Failed Collections -->
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Failed Collections</h5>
+                    <h2 class="mb-0">₦{{ stats.failed.total|default:0|floatformat:2|intcomma }}</h2>
+                    <small>{{ stats.failed.count|default:0|intcomma }} transactions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trends Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Monthly Fee Collection Trends</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="monthlyTrendsChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Recent Platform Fee Transactions</h5>
+            <a href="{% url 'core:platform_fee_dashboard' %}" class="btn btn-primary btn-sm">
+                View All
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>App</th>
+                            <th>Funds Raised</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Gateway</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td>{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <a href="{% url 'core:app_detail' tx.app.id %}">{{ tx.app.name }}</a>
+                            </td>
+                            <td>₦{{ tx.app.get_raised_amount|floatformat:2|intcomma }}</td>
+                            <td>₦{{ tx.amount|floatformat:2|intcomma }}</td>
+                            <td>
+                                <span class="badge bg-{{ tx.status|lower }}">
+                                    {{ tx.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ tx.payment_gateway }}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transactionModal{{ tx.id }}">
+                                    View Details
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Transaction Details Modal -->
+                        <div class="modal fade" id="transactionModal{{ tx.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Transaction Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <dl class="row">
+                                            <dt class="col-sm-4">App</dt>
+                                            <dd class="col-sm-8">{{ tx.app.name }}</dd>
+
+                                            <dt class="col-sm-4">Amount</dt>
+                                            <dd class="col-sm-8">₦{{ tx.amount|floatformat:2|intcomma }}</dd>
+
+                                            <dt class="col-sm-4">Status</dt>
+                                            <dd class="col-sm-8">
+                                                <span class="badge bg-{{ tx.status|lower }}">
+                                                    {{ tx.get_status_display }}
+                                                </span>
+                                            </dd>
+
+                                            <dt class="col-sm-4">Gateway</dt>
+                                            <dd class="col-sm-8">{{ tx.payment_gateway }}</dd>
+
+                                            <dt class="col-sm-4">Reference</dt>
+                                            <dd class="col-sm-8">{{ tx.transaction_reference|default:"-" }}</dd>
+
+                                            <dt class="col-sm-4">Created</dt>
+                                            <dd class="col-sm-8">{{ tx.created_at|date:"Y-m-d H:i" }}</dd>
+
+                                            {% if tx.completed_at %}
+                                            <dt class="col-sm-4">Completed</dt>
+                                            <dd class="col-sm-8">{{ tx.completed_at|date:"Y-m-d H:i" }}</dd>
+                                            {% endif %}
+
+                                            {% if tx.failure_reason %}
+                                            <dt class="col-sm-4">Failure Reason</dt>
+                                            <dd class="col-sm-8">{{ tx.failure_reason }}</dd>
+                                            {% endif %}
+                                        </dl>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No recent transactions</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Monthly Trends Chart
+    const monthlyData = {
+        labels: [{% for item in monthly_fees %}'{{ item.month|date:"M Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Platform Fees',
+            data: [{% for item in monthly_fees %}{{ item.total|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1,
+            fill: true
+        }]
+    };
+
+    new Chart(document.getElementById('monthlyTrendsChart'), {
+        type: 'line',
+        data: monthlyData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Monthly Platform Fee Collection'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+<style>
+.badge {
+    padding: 0.5em 0.7em;
+}
+.badge.bg-pending { background-color: #ffc107; }
+.badge.bg-completed { background-color: #28a745; }
+.badge.bg-failed { background-color: #dc3545; }
+</style>
+
+{% endblock %} 

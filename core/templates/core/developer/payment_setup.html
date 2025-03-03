@@ -1,0 +1,180 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Payment Setup - Developer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Payment Information Setup</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" id="paymentForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Payment Method</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="payment_method" id="bank_transfer" 
+                                       value="bank_transfer" {% if payment_info.payment_method == 'bank_transfer' %}checked{% endif %}>
+                                <label class="btn btn-outline-primary" for="bank_transfer">Bank Transfer</label>
+
+                                <input type="radio" class="btn-check" name="payment_method" id="paystack" 
+                                       value="paystack" {% if payment_info.payment_method == 'paystack' %}checked{% endif %}>
+                                <label class="btn btn-outline-primary" for="paystack">Paystack</label>
+                            </div>
+                        </div>
+
+                        <!-- Bank Transfer Fields -->
+                        <div id="bankTransferFields" class="payment-fields">
+                            <div class="mb-3">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" name="bank_name" required 
+                                       value="{{ payment_info.account_details.bank_name|default:'' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" name="account_number" required 
+                                       value="{{ payment_info.account_details.account_number|default:'' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Account Name</label>
+                                <input type="text" class="form-control" name="account_name" required 
+                                       value="{{ payment_info.account_details.account_name|default:'' }}">
+                            </div>
+                        </div>
+
+                        <!-- Paystack Fields -->
+                        <div id="paystackFields" class="payment-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" 
+                                       value="{{ payment_info.account_details.email|default:request.user.email }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Bank</label>
+                                <select class="form-select" name="bank_code">
+                                    <option value="">Select Bank</option>
+                                    {% for bank in banks %}
+                                        <option value="{{ bank.code }}">{{ bank.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" name="account_number">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                {% if payment_info %}Update{% else %}Save{% endif %} Payment Information
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethod = document.getElementsByName('payment_method');
+    const bankTransferFields = document.getElementById('bankTransferFields');
+    const paystackFields = document.getElementById('paystackFields');
+    const form = document.getElementById('paymentForm');
+
+    // Hide all payment fields initially
+    bankTransferFields.style.display = 'none';
+    paystackFields.style.display = 'none';
+
+    function togglePaymentFields() {
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        console.log('Selected payment method:', selectedMethod);
+        
+        if (selectedMethod === 'bank_transfer') {
+            bankTransferFields.style.display = 'block';
+            paystackFields.style.display = 'none';
+            // Enable bank transfer fields
+            bankTransferFields.querySelectorAll('input').forEach(input => {
+                input.disabled = false;
+            });
+            // Disable paystack fields
+            paystackFields.querySelectorAll('input, select').forEach(input => {
+                input.disabled = true;
+            });
+        } else if (selectedMethod === 'paystack') {
+            bankTransferFields.style.display = 'none';
+            paystackFields.style.display = 'block';
+            // Disable bank transfer fields
+            bankTransferFields.querySelectorAll('input').forEach(input => {
+                input.disabled = true;
+            });
+            // Enable paystack fields
+            paystackFields.querySelectorAll('input, select').forEach(input => {
+                input.disabled = false;
+            });
+        }
+    }
+
+    // Add change event listeners to radio buttons
+    paymentMethod.forEach(radio => {
+        radio.addEventListener('change', togglePaymentFields);
+    });
+
+    // Set initial payment method
+    const urlParams = new URLSearchParams(window.location.search);
+    const method = urlParams.get('method') || 'bank_transfer';
+    const radioButton = document.getElementById(method);
+    if (radioButton) {
+        radioButton.checked = true;
+        togglePaymentFields();
+    }
+
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        
+        if (selectedMethod === 'bank_transfer') {
+            const bankName = bankTransferFields.querySelector('input[name="bank_name"]').value.trim();
+            const accountNumber = bankTransferFields.querySelector('input[name="account_number"]').value.trim();
+            const accountName = bankTransferFields.querySelector('input[name="account_name"]').value.trim();
+            
+            console.log('Submitting bank transfer details:', {
+                bankName,
+                accountNumber,
+                accountName
+            });
+
+            if (!bankName || !accountNumber || !accountName) {
+                e.preventDefault();
+                if (!bankName) {
+                    alert('Please enter bank name');
+                    bankTransferFields.querySelector('input[name="bank_name"]').focus();
+                } else if (!accountNumber) {
+                    alert('Please enter account number');
+                    bankTransferFields.querySelector('input[name="account_number"]').focus();
+                } else if (!accountName) {
+                    alert('Please enter account name');
+                    bankTransferFields.querySelector('input[name="account_name"]').focus();
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

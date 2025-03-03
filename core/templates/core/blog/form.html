@@ -1,0 +1,389 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Blog Post{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+    .ql-editor {
+        min-height: 300px;
+    }
+    .preview-image {
+        max-width: 200px;
+        max-height: 200px;
+        object-fit: cover;
+        margin-top: 10px;
+    }
+    .seo-counter {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .seo-counter.warning {
+        color: #ffc107;
+    }
+    .seo-counter.danger {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">
+                        {% if form.instance.pk %}
+                            Edit Blog Post
+                        {% else %}
+                            Create New Blog Post
+                        {% endif %}
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="blogForm">
+                        {% csrf_token %}
+                        
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Title *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">Category *</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.category.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Featured Image -->
+                        <div class="mb-3">
+                            <label for="{{ form.featured_image.id_for_label }}" class="form-label">Featured Image</label>
+                            {{ form.featured_image }}
+                            {% if form.instance.featured_image %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.featured_image.url }}" class="preview-image" alt="Current featured image">
+                            </div>
+                            {% endif %}
+                            {% if form.featured_image.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.featured_image.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Content -->
+                        <div class="mb-3">
+                            <label for="editor" class="form-label">Content *</label>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6>AI Content Generation</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-8">
+                                            <label for="{{ form.source_url.id_for_label }}" class="form-label">Source URL</label>
+                                            {{ form.source_url }}
+                                            {% if form.source_url.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.source_url.errors }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="{{ form.target_word_count.id_for_label }}" class="form-label">Target Word Count</label>
+                                            {{ form.target_word_count }}
+                                            {% if form.target_word_count.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.target_word_count.errors }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="button" id="generateContent" class="btn btn-primary">
+                                                <i class="bi bi-robot"></i> Generate Content from URL
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="editor"></div>
+                            <input type="hidden" name="content" id="content">
+                            {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.content.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- SEO Section -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">SEO Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Meta Title -->
+                                <div class="mb-3">
+                                    <label for="{{ form.meta_title.id_for_label }}" class="form-label">
+                                        Meta Title
+                                        <small class="text-muted">(Recommended: 50-60 characters)</small>
+                                    </label>
+                                    {{ form.meta_title }}
+                                    <div class="seo-counter" id="metaTitleCounter">0/60 characters</div>
+                                    {% if form.meta_title.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.meta_title.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Meta Description -->
+                                <div class="mb-3">
+                                    <label for="{{ form.meta_description.id_for_label }}" class="form-label">
+                                        Meta Description
+                                        <small class="text-muted">(Recommended: 150-160 characters)</small>
+                                    </label>
+                                    {{ form.meta_description }}
+                                    <div class="seo-counter" id="metaDescCounter">0/160 characters</div>
+                                    {% if form.meta_description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.meta_description.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Meta Keywords -->
+                                <div class="mb-3">
+                                    <label for="{{ form.meta_keywords.id_for_label }}" class="form-label">
+                                        Meta Keywords
+                                        <small class="text-muted">(Comma-separated)</small>
+                                    </label>
+                                    {{ form.meta_keywords }}
+                                    {% if form.meta_keywords.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.meta_keywords.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Social Media Section -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Social Media Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Social Title -->
+                                <div class="mb-3">
+                                    <label for="{{ form.social_title.id_for_label }}" class="form-label">
+                                        Social Media Title
+                                    </label>
+                                    {{ form.social_title }}
+                                    {% if form.social_title.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.social_title.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Social Description -->
+                                <div class="mb-3">
+                                    <label for="{{ form.social_description.id_for_label }}" class="form-label">
+                                        Social Media Description
+                                    </label>
+                                    {{ form.social_description }}
+                                    {% if form.social_description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.social_description.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.status.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'core:blog_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <div>
+                                <button type="submit" name="status" value="draft" class="btn btn-outline-primary me-2">
+                                    Save as Draft
+                                </button>
+                                <button type="submit" name="status" value="published" class="btn btn-primary">
+                                    Publish
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script>
+    // Initialize Quill editor
+    var quill = new Quill('#editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['clean']
+            ]
+        }
+    });
+
+    // Set initial content if editing
+    {% if form.instance.content %}
+        quill.root.innerHTML = `{{ form.instance.content|safe|escapejs }}`;
+    {% endif %}
+
+    // Update hidden input before form submission
+    document.getElementById('blogForm').onsubmit = function() {
+        document.getElementById('content').value = quill.root.innerHTML;
+    };
+
+    // AI Content Generation
+    document.getElementById('generateContent').addEventListener('click', function() {
+        const sourceUrl = document.querySelector('#{{ form.source_url.id_for_label }}').value;
+        const wordCount = document.querySelector('#{{ form.target_word_count.id_for_label }}').value;
+        
+        if (!sourceUrl) {
+            alert('Please enter a source URL');
+            return;
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+
+        fetch('/api/blog/generate-content/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                source_url: sourceUrl,
+                word_count: wordCount
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Failed to generate content');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                quill.root.innerHTML = data.content;
+                // Update meta fields if they're empty
+                if (!document.querySelector('#{{ form.meta_title.id_for_label }}').value) {
+                    document.querySelector('#{{ form.meta_title.id_for_label }}').value = data.meta_title || '';
+                }
+                if (!document.querySelector('#{{ form.meta_description.id_for_label }}').value) {
+                    document.querySelector('#{{ form.meta_description.id_for_label }}').value = data.meta_description || '';
+                }
+                if (!document.querySelector('#{{ form.meta_keywords.id_for_label }}').value) {
+                    document.querySelector('#{{ form.meta_keywords.id_for_label }}').value = data.meta_keywords || '';
+                }
+            } else {
+                throw new Error(data.error || 'Failed to generate content');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message || 'Failed to generate content');
+        })
+        .finally(() => {
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-robot"></i> Generate Content from URL';
+        });
+    });
+
+    // Character counters for SEO fields
+    function updateCounter(input, counter, maxLength) {
+        const length = input.value.length;
+        const counterElement = document.getElementById(counter);
+        counterElement.textContent = `${length}/${maxLength} characters`;
+        
+        if (length > maxLength) {
+            counterElement.classList.add('danger');
+        } else if (length > maxLength * 0.8) {
+            counterElement.classList.add('warning');
+            counterElement.classList.remove('danger');
+        } else {
+            counterElement.classList.remove('warning', 'danger');
+        }
+    }
+
+    // Meta title counter
+    const metaTitleInput = document.getElementById('{{ form.meta_title.id_for_label }}');
+    metaTitleInput.addEventListener('input', () => {
+        updateCounter(metaTitleInput, 'metaTitleCounter', 60);
+    });
+    updateCounter(metaTitleInput, 'metaTitleCounter', 60);
+
+    // Meta description counter
+    const metaDescInput = document.getElementById('{{ form.meta_description.id_for_label }}');
+    metaDescInput.addEventListener('input', () => {
+        updateCounter(metaDescInput, 'metaDescCounter', 160);
+    });
+    updateCounter(metaDescInput, 'metaDescCounter', 160);
+
+    // Image preview
+    document.getElementById('{{ form.featured_image.id_for_label }}').addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.querySelector('.preview-image');
+                if (preview) {
+                    preview.src = e.target.result;
+                } else {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.classList.add('preview-image');
+                    this.parentElement.appendChild(img);
+                }
+            }.bind(this);
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+</script>
+{% endblock %} 

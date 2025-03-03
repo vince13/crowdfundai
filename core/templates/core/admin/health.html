@@ -1,0 +1,103 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .health-status {
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-weight: bold;
+    }
+    .status-healthy {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-unhealthy {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <h1 class="h2 mb-4">System Health Status</h1>
+
+    <!-- Overall Status -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Overall Status</h5>
+            <div class="health-status status-{{ health_status.status }}">
+                {{ health_status.status|title }}
+            </div>
+            <small class="text-muted">Last checked: {{ health_status.timestamp }}</small>
+        </div>
+    </div>
+
+    <!-- Individual Checks -->
+    <div class="row">
+        {% for name, check in health_status.checks.items %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ name|title }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="health-status status-{{ check.status }} mb-3">
+                        {{ check.status|title }}
+                    </div>
+                    <p class="card-text">{{ check.message }}</p>
+                    {% if check.details %}
+                    <div class="mt-3">
+                        <h6>Details:</h6>
+                        <ul class="list-unstyled">
+                            {% for key, value in check.details.items %}
+                            <li><strong>{{ key|title }}:</strong> {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-refresh health status every 30 seconds
+    function refreshHealthStatus() {
+        fetch('/api/health/status/')
+            .then(response => response.json())
+            .then(data => {
+                // Update the dashboard with new data
+                updateHealthDashboard(data);
+            });
+    }
+
+    function updateHealthDashboard(data) {
+        // Update overall status
+        document.querySelector('.overall-status')
+            .className = `health-status status-${data.status}`;
+        
+        // Update individual checks
+        Object.entries(data.checks).forEach(([name, check]) => {
+            const card = document.querySelector(`#check-${name}`);
+            if (card) {
+                card.querySelector('.health-status')
+                    .className = `health-status status-${check.status}`;
+                card.querySelector('.message').textContent = check.message;
+            }
+        });
+    }
+
+    // Refresh every 30 seconds
+    setInterval(refreshHealthStatus, 30000);
+</script>
+{% endblock %}
+{% endblock %} 

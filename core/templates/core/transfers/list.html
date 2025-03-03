@@ -1,0 +1,192 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load custom_filters %}
+{% load currency_tags %}
+
+{% block title %}Percentage Transfers{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Percentage Transfers</h2>
+        {% if app %}
+            <div>
+                <span class="text-muted">Filtered by app:</span>
+                <strong>{{ app.name }}</strong>
+                <a href="{% url 'core:share_transfer_list' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                    Clear Filter
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Available Percentage Transfers -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Available Percentage Transfers</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>App</th>
+                            <th>Seller</th>
+                            <th>Percentage</th>
+                            <th>Price per %</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transfer in available_transfers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'core:app_detail' transfer.app.pk %}">
+                                        {{ transfer.app.name }}
+                                    </a>
+                                </td>
+                                <td>{{ transfer.seller.username }}</td>
+                                <td>{{ transfer.percentage_amount|floatformat:2 }}%</td>
+                                <td>₦{{ transfer.price_per_percentage|floatformat:2|intcomma }}</td>
+                                <td>₦{{ transfer.total_amount|floatformat:2|intcomma }}</td>
+                                <td>
+                                    <a href="{% url 'core:purchase_transfer' transfer.pk %}"
+                                       class="btn btn-success btn-sm">
+                                        Purchase
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    No percentage ownership available for purchase{% if app %} for {{ app.name }}{% endif %}.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Your Transferable Percentage -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Transferable Percentage</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>App</th>
+                            <th>Percentage Owned</th>
+                            <th>Current Price per %</th>
+                            <th>Total Value</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in transferable_percentages %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'core:app_detail' item.ownership.app.pk %}">
+                                        {{ item.ownership.app.name }}
+                                    </a>
+                                </td>
+                                <td>{{ item.ownership.percentage_owned|floatformat:2 }}%</td>
+                                <td>₦{{ item.ownership.app.price_per_percentage|floatformat:2|intcomma }}</td>
+                                <td>₦{{ item.ownership.percentage_owned|multiply:item.ownership.app.price_per_percentage|floatformat:2|intcomma }}</td>
+                                <td>
+                                    {% if item.can_transfer %}
+                                        <span class="badge bg-success">Available for Transfer</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">
+                                            Locked until {{ item.lock_in_end_date|date }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.can_transfer %}
+                                        <a href="{% url 'core:create_transfer' item.ownership.app.pk %}" 
+                                           class="btn btn-primary btn-sm">
+                                            Create Transfer
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    You don't own any percentage{% if app %} in {{ app.name }}{% endif %}.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Your Transfer Listings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Your Transfer Listings</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>App</th>
+                            <th>Percentage</th>
+                            <th>Price per %</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transfer in transfers_selling %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'core:app_detail' transfer.app.pk %}">
+                                        {{ transfer.app.name }}
+                                    </a>
+                                </td>
+                                <td>{{ transfer.percentage_amount|floatformat:2 }}%</td>
+                                <td>₦{{ transfer.price_per_percentage|floatformat:2|intcomma }}</td>
+                                <td>₦{{ transfer.total_amount|floatformat:2|intcomma }}</td>
+                                <td>
+                                    <span class="badge bg-{{ transfer.status|lower }}">
+                                        {{ transfer.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if transfer.status == 'PENDING' %}
+                                        <form method="post" action="{% url 'core:cancel_transfer' transfer.pk %}"
+                                              style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    You haven't created any transfer listings{% if app %} for {{ app.name }}{% endif %}.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

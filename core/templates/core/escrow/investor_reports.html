@@ -1,0 +1,240 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="escrow-reports container py-4">
+    <h1 class="mb-4 text-mode">Your Escrow Reports</h1>
+
+    <!-- Overall Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-mode">
+                <div class="card-body">
+                    <h5 class="card-title text-mode">Overall Statistics</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="label-text">Total Transactions:</span>
+                        <strong class="value-text">{{ total_transactions }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="label-text">Total in Escrow:</span>
+                        <strong class="value-text">₦{{ total_in_escrow|floatformat:2|intcomma }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-mode">
+                <div class="card-body">
+                    <h5 class="card-title text-mode">Transaction Statistics</h5>
+                    <div class="table-responsive">
+                        <table class="table table-mode">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in transaction_stats %}
+                                <tr>
+                                    <td class="label-text">{{ stat.transaction_type }}</td>
+                                    <td class="value-text">{{ stat.count }}</td>
+                                    <td class="value-text">₦{{ stat.total_amount|floatformat:2|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps with Escrow -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-mode">
+                <div class="card-body">
+                    <h5 class="card-title text-mode">Your Apps with Escrow Funds</h5>
+                    <div class="table-responsive">
+                        <table class="table table-mode">
+                            <thead>
+                                <tr>
+                                    <th>App</th>
+                                    <th>Developer</th>
+                                    <th>Funds in Escrow</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in apps %}
+                                <tr>
+                                    <td class="label-text">{{ app.name }}</td>
+                                    <td class="value-text">
+                                        <a href="{% url 'core:profile' app.developer.id %}" class="developer-link">
+                                            {{ app.developer.email }}
+                                        </a>
+                                    </td>
+                                    <td class="value-text">₦{{ app.funds_in_escrow|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        <a href="{% url 'core:app_detail' app.id %}" class="btn btn-sm btn-primary">View App</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-mode">No apps with escrow funds found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Light mode styles */
+.escrow-reports .card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.escrow-reports .card-title {
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.escrow-reports .table {
+    margin-bottom: 0;
+}
+
+.escrow-reports .table th {
+    border-top: none;
+}
+
+.escrow-reports .btn-sm {
+    margin-right: 5px;
+}
+
+.escrow-reports .btn-sm:last-child {
+    margin-right: 0;
+}
+
+/* Dark mode styles */
+.dark-mode .bg-mode {
+    background-color: #2d3748 !important;
+}
+
+.dark-mode .text-mode {
+    color: #fff !important;
+}
+
+.dark-mode .table-mode {
+    color: #fff;
+}
+
+.dark-mode .table-mode th {
+    background-color: #1a202c !important;
+    color: #fff;
+    border-color: #4a5568;
+}
+
+.dark-mode .table-mode td {
+    border-color: #4a5568;
+}
+
+.dark-mode .card {
+    border: 1px solid #4a5568;
+}
+
+.dark-mode .card-title {
+    border-bottom-color: #4a5568;
+}
+
+/* Label and Value text styles */
+.label-text {
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.value-text {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Dark mode text colors */
+.dark-mode .label-text {
+    color: #e2e8f0 !important;
+}
+
+.dark-mode .value-text {
+    color: #fff !important;
+}
+
+/* Light mode text colors */
+.label-text {
+    color: #4a5568;
+}
+
+.value-text {
+    color: #2d3748;
+}
+
+/* Developer link styles */
+.developer-link {
+    color: #3182ce;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.developer-link:hover {
+    color: #2c5282;
+    text-decoration: underline;
+}
+
+.dark-mode .developer-link {
+    color: #63b3ed;
+}
+
+.dark-mode .developer-link:hover {
+    color: #90cdf4;
+}
+
+/* Light mode defaults */
+.bg-mode {
+    background-color: #fff;
+}
+
+.text-mode {
+    color: #333;
+}
+
+.table-mode {
+    color: #333;
+}
+
+.table-mode th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* Hover effects for tables */
+.dark-mode .table-mode tbody tr:hover {
+    background-color: #3a4556 !important;
+}
+
+.table-mode tbody tr:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %} 

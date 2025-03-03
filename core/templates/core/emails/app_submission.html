@@ -1,0 +1,31 @@
+{% extends "core/emails/base_email.html" %}
+
+{% block content %}
+<div style="padding: 20px; background-color: #ffffff; border-radius: 5px; margin: 20px 0;">
+    <h2 style="color: #333; margin-bottom: 20px;">New App Submission</h2>
+    
+    <p>Hello {{ admin.get_full_name|default:admin.email }},</p>
+    
+    <p>A new app has been submitted and requires your review:</p>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <p><strong>App Name:</strong> {{ app.name }}</p>
+        <p><strong>Developer:</strong> {{ app.developer.email }}</p>
+        <p><strong>Category:</strong> {{ app.category }}</p>
+        <p><strong>Description:</strong> {{ app.description|truncatewords:50 }}</p>
+    </div>
+    
+    <p>Please review this submission at your earliest convenience.</p>
+    
+    <div style="margin: 30px 0;">
+        <a href="{{ site_url }}{% url 'admin:core_applisting_change' app.id %}" 
+           style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Review App
+        </a>
+    </div>
+    
+    <p style="color: #666; font-size: 0.9em;">
+        This is an automated message. Please do not reply to this email.
+    </p>
+</div>
+{% endblock %} 

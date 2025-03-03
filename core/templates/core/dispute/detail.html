@@ -1,0 +1,324 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Dispute #{{ dispute.id }} - {{ dispute.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'core:dispute_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Disputes
+        </a>
+    </div>
+
+    <!-- Dispute Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="h3 mb-2">{{ dispute.title }}</h1>
+                    <p class="text-muted mb-0">
+                        Dispute #{{ dispute.id }} | 
+                        <span class="badge bg-info">{{ dispute.get_dispute_type_display }}</span>
+                        {% if dispute.status == 'PENDING' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif dispute.status == 'IN_REVIEW' %}
+                            <span class="badge bg-info">In Review</span>
+                        {% elif dispute.status == 'RESOLVED' %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% elif dispute.status == 'CLOSED' %}
+                            <span class="badge bg-secondary">Closed</span>
+                        {% elif dispute.status == 'ESCALATED' %}
+                            <span class="badge bg-danger">Escalated</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% if user.is_staff %}
+                <a href="{% url 'core:manage_dispute' dispute.id %}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Manage Dispute
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Dispute Details -->
+        <div class="col-md-8">
+            <!-- Description -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Description</h5>
+                </div>
+                <div class="card-body">
+                    {{ dispute.description|linebreaks }}
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Comments</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Comment Form -->
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="content" class="form-control" rows="3" 
+                                      placeholder="Add a comment..." required></textarea>
+                        </div>
+                        {% if user.is_staff %}
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="is_internal" class="form-check-input" id="is_internal">
+                            <label class="form-check-label" for="is_internal">Internal Note</label>
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-comment"></i> Add Comment
+                        </button>
+                    </form>
+
+                    <!-- Comments List -->
+                    {% for comment in comments %}
+                    {% if not comment.is_internal or user.is_staff %}
+                    <div class="comment mb-3 {% if comment.is_internal %}bg-light-subtle border-warning{% endif %} p-3 rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                                {% if comment.is_internal %}
+                                <span class="badge bg-warning ms-2">Internal Note</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0 mt-2">{{ comment.content|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    {% empty %}
+                    <p class="text-muted text-center">No comments yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Transaction Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Transaction Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-light-emphasis">App:</dt>
+                        <dd class="col-sm-7 text-light-emphasis">
+                            <a href="{% url 'core:app_detail' dispute.transaction.app.id %}" class="text-decoration-none">
+                                {{ dispute.transaction.app.name }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-5 text-light-emphasis">Amount:</dt>
+                        <dd class="col-sm-7 text-light-emphasis">₦{{ dispute.amount_in_dispute|default:dispute.transaction.amount }}</dd>
+
+                        <dt class="col-sm-5 text-light-emphasis">Date:</dt>
+                        <dd class="col-sm-7 text-light-emphasis">{{ dispute.transaction.created_at|date:"M d, Y" }}</dd>
+
+                        <dt class="col-sm-5 text-light-emphasis">Transaction ID:</dt>
+                        <dd class="col-sm-7 text-light-emphasis text-secondary">#{{ dispute.transaction.id }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Evidence Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Evidence</h5>
+                    <a href="{% url 'core:upload_evidence' dispute.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-upload"></i> Add Evidence
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if evidence %}
+                    <div class="list-group list-group-flush">
+                        {% for item in evidence %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 text-light-emphasis">{{ item.title }}</h6>
+                                    <small class="text-secondary">
+                                        Uploaded by {{ item.uploaded_by.get_full_name|default:item.uploaded_by.username }}
+                                        on {{ item.uploaded_at|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ item.file.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                    <a href="{{ item.file.url }}" class="btn btn-sm btn-outline-secondary" download>
+                                        <i class="fas fa-download me-1"></i> Download
+                                    </a>
+                                    {% if user.is_staff %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteEvidenceModal{{ item.id }}">
+                                        <i class="fas fa-trash me-1"></i> Delete
+                                    </button>
+                                    
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="deleteEvidenceModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Confirm Delete</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to delete this evidence?</p>
+                                                    <p class="mb-0"><strong>Title:</strong> {{ item.title }}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form method="post" action="{% url 'core:delete_evidence' item.id %}" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="fas fa-trash me-1"></i> Delete Evidence
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if item.description %}
+                            <p class="mb-0 mt-2 text-secondary">{{ item.description }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-secondary text-center mb-0">No evidence uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <i class="fas fa-circle text-primary"></i>
+                            <span class="small text-muted">{{ dispute.created_at|date:"M d, Y H:i" }}</span>
+                            <p class="mb-2">Dispute created</p>
+                        </div>
+                        {% if dispute.assigned_to %}
+                        <div class="timeline-item">
+                            <i class="fas fa-circle text-info"></i>
+                            <span class="small text-muted">{{ dispute.updated_at|date:"M d, Y H:i" }}</span>
+                            <p class="mb-2">Assigned to {{ dispute.assigned_to.get_full_name }}</p>
+                        </div>
+                        {% endif %}
+                        {% if dispute.resolved_at %}
+                        <div class="timeline-item">
+                            <i class="fas fa-circle text-success"></i>
+                            <span class="small text-muted">{{ dispute.resolved_at|date:"M d, Y H:i" }}</span>
+                            <p class="mb-0">Dispute resolved</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if user.is_staff and previous_disputes %}
+            <!-- Previous Disputes -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Previous Disputes</h5>
+                    <span class="badge bg-secondary">{{ previous_disputes|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for prev_dispute in previous_disputes %}
+                        <a href="{% url 'core:dispute_detail' prev_dispute.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-primary">#{{ prev_dispute.id }}</strong>
+                                <small class="text-muted">{{ prev_dispute.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-2 small">{{ prev_dispute.title }}</p>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <span class="badge bg-secondary me-2">{{ prev_dispute.get_dispute_type_display }}</span>
+                                    <span class="badge bg-info">₦{{ prev_dispute.amount_in_dispute|default:prev_dispute.transaction.amount|intcomma }}</span>
+                                </div>
+                                <div>
+                                    {% if prev_dispute.resolved_at %}
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-success me-2">Resolved</span>
+                                        <small class="text-muted">{{ prev_dispute.resolved_at|date:"M d, Y" }}</small>
+                                    </div>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <small class="text-muted">App: {{ prev_dispute.transaction.app.name }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    .timeline-item i {
+        position: absolute;
+        left: -30px;
+        top: 0;
+        font-size: 0.75rem;
+    }
+    .comment {
+        border-left: 3px solid #dee2e6;
+    }
+    .comment.internal {
+        border-left-color: #ffc107;
+    }
+    
+    /* Dark mode styles */
+    [data-bs-theme="dark"] .text-muted {
+        color: #adb5bd !important;
+    }
+    [data-bs-theme="dark"] .list-group-item {
+        background-color: transparent;
+        color: var(--bs-body-color);
+    }
+    [data-bs-theme="dark"] .comment {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    [data-bs-theme="dark"] .bg-light {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+</style>
+{% endblock %} 

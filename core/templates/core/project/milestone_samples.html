@@ -1,0 +1,287 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card bg-dark text-white">
+                <div class="card-header bg-dark border-secondary">
+                    <h3 class="mb-0"><i class="bi bi-lightbulb"></i> AI Project Milestone Guidelines</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-primary">
+                        <h5><i class="bi bi-info-circle"></i> Why Good Milestones Matter</h5>
+                        <ul class="mb-0">
+                            <li>Clear project progress tracking</li>
+                            <li>Better investor confidence</li>
+                            <li>Transparent fund release schedule</li>
+                            <li>Structured development approach</li>
+                        </ul>
+                    </div>
+
+                    <!-- Sample Milestones -->
+                    <h4 class="mt-4 text-white">Sample Milestone Structure</h4>
+                    <div class="accordion accordion-dark" id="milestoneExamples">
+                        <!-- MVP Development -->
+                        <div class="accordion-item bg-dark text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#mvpExample">
+                                    <div>
+                                        <strong>Phase 1: MVP Development</strong>
+                                        <span class="badge bg-primary ms-2">30% Release</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="mvpExample" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <h6 class="text-white">Description</h6>
+                                    <p class="text-white">Development of core AI functionality and basic user interface to demonstrate the application's primary value proposition.</p>
+                                    
+                                    <h6 class="text-white">Key Deliverables</h6>
+                                    <ul class="text-white">
+                                        <li><strong>AI Model Implementation:</strong>
+                                            <ul>
+                                                <li>Core algorithm implementation</li>
+                                                <li>Model training pipeline</li>
+                                                <li>Initial accuracy metrics</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Basic API Layer:</strong>
+                                            <ul>
+                                                <li>Core endpoints implementation</li>
+                                                <li>Basic authentication</li>
+                                                <li>API documentation</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>MVP Interface:</strong>
+                                            <ul>
+                                                <li>Basic user interface</li>
+                                                <li>Core feature implementation</li>
+                                                <li>Basic error handling</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+
+                                    <h6 class="text-white">Required Evidence</h6>
+                                    <ul class="text-white">
+                                        <li>GitHub repository with implemented features</li>
+                                        <li>Model performance metrics</li>
+                                        <li>API documentation</li>
+                                        <li>Demo video of working features</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Testing & Optimization -->
+                        <div class="accordion-item bg-dark text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#testingExample">
+                                    <div>
+                                        <strong>Phase 2: Testing & Optimization</strong>
+                                        <span class="badge bg-primary ms-2">25% Release</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="testingExample" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <h6 class="text-white">Description</h6>
+                                    <p class="text-white">Comprehensive testing, performance optimization, and security implementation.</p>
+                                    
+                                    <h6 class="text-white">Key Deliverables</h6>
+                                    <ul class="text-white">
+                                        <li><strong>Performance Optimization:</strong>
+                                            <ul>
+                                                <li>Model optimization metrics</li>
+                                                <li>Response time improvements</li>
+                                                <li>Resource usage optimization</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Security Implementation:</strong>
+                                            <ul>
+                                                <li>Security audit results</li>
+                                                <li>Vulnerability fixes</li>
+                                                <li>Data protection measures</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Testing Suite:</strong>
+                                            <ul>
+                                                <li>Unit test coverage</li>
+                                                <li>Integration tests</li>
+                                                <li>Load testing results</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+
+                                    <h6 class="text-white">Required Evidence</h6>
+                                    <ul class="text-white">
+                                        <li>Performance benchmark reports</li>
+                                        <li>Security audit documentation</li>
+                                        <li>Test coverage reports</li>
+                                        <li>Load testing analysis</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Beta Launch -->
+                        <div class="accordion-item bg-dark text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#betaExample">
+                                    <div>
+                                        <strong>Phase 3: Beta Launch</strong>
+                                        <span class="badge bg-primary ms-2">25% Release</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="betaExample" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <h6 class="text-white">Description</h6>
+                                    <p class="text-white">Limited public release, user feedback collection, and iterative improvements.</p>
+                                    
+                                    <h6 class="text-white">Key Deliverables</h6>
+                                    <ul class="text-white">
+                                        <li><strong>Beta Deployment:</strong>
+                                            <ul>
+                                                <li>Staging environment setup</li>
+                                                <li>Beta user onboarding</li>
+                                                <li>Monitoring setup</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>User Feedback:</strong>
+                                            <ul>
+                                                <li>Feedback collection system</li>
+                                                <li>User satisfaction metrics</li>
+                                                <li>Feature request tracking</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Documentation:</strong>
+                                            <ul>
+                                                <li>User guides</li>
+                                                <li>API documentation</li>
+                                                <li>Support documentation</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+
+                                    <h6 class="text-white">Required Evidence</h6>
+                                    <ul class="text-white">
+                                        <li>Beta testing plan and results</li>
+                                        <li>User feedback analysis</li>
+                                        <li>Documentation repository</li>
+                                        <li>Bug tracking dashboard</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Production Release -->
+                        <div class="accordion-item bg-dark text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#productionExample">
+                                    <div>
+                                        <strong>Phase 4: Production Release</strong>
+                                        <span class="badge bg-primary ms-2">20% Release</span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="productionExample" class="accordion-collapse collapse">
+                                <div class="accordion-body">
+                                    <h6 class="text-white">Description</h6>
+                                    <p class="text-white">Full production deployment, marketing launch, and scaling infrastructure.</p>
+                                    
+                                    <h6 class="text-white">Key Deliverables</h6>
+                                    <ul class="text-white">
+                                        <li><strong>Production Infrastructure:</strong>
+                                            <ul>
+                                                <li>Production environment setup</li>
+                                                <li>Scaling configuration</li>
+                                                <li>Monitoring and alerts</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Marketing Launch:</strong>
+                                            <ul>
+                                                <li>Marketing materials</li>
+                                                <li>Press releases</li>
+                                                <li>Launch event planning</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Support System:</strong>
+                                            <ul>
+                                                <li>Customer support setup</li>
+                                                <li>SLA documentation</li>
+                                                <li>Incident response plan</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+
+                                    <h6 class="text-white">Required Evidence</h6>
+                                    <ul class="text-white">
+                                        <li>Production deployment documentation</li>
+                                        <li>Marketing campaign materials</li>
+                                        <li>Support system documentation</li>
+                                        <li>Performance monitoring dashboard</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guidelines -->
+                    <div class="mt-4">
+                        <h4 class="text-white">Best Practices</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card h-100 bg-dark border-secondary">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-white">Do's</h5>
+                                        <ul class="text-success">
+                                            <li>Make deliverables specific and measurable</li>
+                                            <li>Include clear evidence requirements</li>
+                                            <li>Set realistic timelines</li>
+                                            <li>Break down complex features</li>
+                                            <li>Consider dependencies between phases</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 bg-dark border-secondary">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-white">Don'ts</h5>
+                                        <ul class="text-danger">
+                                            <li>Make vague or unmeasurable goals</li>
+                                            <li>Front-load all major features</li>
+                                            <li>Ignore testing and documentation</li>
+                                            <li>Set unrealistic deadlines</li>
+                                            <li>Skip security considerations</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Custom dark mode styles for accordion */
+.accordion-button::after {
+    filter: invert(1);
+}
+.accordion-button:not(.collapsed) {
+    color: white;
+    background-color: #343a40;
+}
+.accordion-button:not(.collapsed)::after {
+    filter: invert(1);
+}
+.accordion-button:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+</style>
+{% endblock %} 

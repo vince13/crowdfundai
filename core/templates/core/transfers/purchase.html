@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Purchase Percentage</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Transfer Details -->
+                    <div class="mb-4">
+                        <h5>Transfer Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>App:</strong> {{ transfer.app.name }}</p>
+                                <p><strong>Seller:</strong> {{ transfer.seller.username }}</p>
+                                <p><strong>Percentage Amount:</strong> {{ transfer.percentage_amount|floatformat:2 }}%</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Price per %:</strong> ₦{{ transfer.price_per_percentage|floatformat:2|intcomma }}</p>
+                                <p><strong>Total Amount:</strong> ₦{{ transfer.total_amount|floatformat:2|intcomma }}</p>
+                                <p><strong>Currency:</strong> NGN</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- App Information -->
+                    <div class="mb-4">
+                        <h5>App Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Current Price per %:</strong> ₦{{ transfer.app.price_per_percentage|floatformat:2|intcomma }}</p>
+                                <p><strong>Market Value:</strong> ₦{{ transfer.percentage_amount|multiply:transfer.app.price_per_percentage|floatformat:2|intcomma }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Lock-in Period:</strong> {{ transfer.app.lock_in_period }} days</p>
+                                <p><strong>Status:</strong> {{ transfer.app.get_status_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Form -->
+                    <form id="payment-form" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Payment Method Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Select Payment Method</label>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="payment_method" 
+                                       id="paystack" value="PAYSTACK" checked>
+                                <label class="form-check-label" for="paystack">
+                                    Pay with Card (Paystack)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Payment Element -->
+                        <div id="payment-element" class="mb-3">
+                            <!-- Payment form will be inserted here -->
+                        </div>
+                        
+                        <!-- Payment Details -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Payment Summary</h5>
+                                <p class="mb-1">Price per %: ₦{{ transfer.price_per_percentage|floatformat:2|intcomma }}</p>
+                                <p class="mb-1">Percentage Amount: {{ transfer.percentage_amount|floatformat:2 }}%</p>
+                                <p class="mb-1">Subtotal: ₦{{ transfer.total_amount|floatformat:2|intcomma }}</p>
+                                <p class="mb-1">Transaction Fee (5%): ₦{{ transfer.get_transaction_fee|floatformat:2|intcomma }}</p>
+                                <p class="mb-1"><strong>Total to Pay: ₦{{ transfer.get_total_with_fee|floatformat:2|intcomma }}</strong></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    I agree to the terms and conditions of this percentage transfer
+                                </label>
+                                <div class="invalid-feedback">
+                                    You must agree to the terms and conditions.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="submit-button">
+                                Pay ₦{{ transfer.get_total_with_fee|floatformat:2|intcomma }}
+                            </button>
+                            <a href="{% url 'core:share_transfer_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit-button');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        submitButton.disabled = true;
+        
+        try {
+            const response = await fetch('/payments/create-intent/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    amount: {{ transfer.get_total_with_fee }},
+                    currency: 'NGN',
+                    payment_type: 'percentage_transfer',
+                    transfer_id: {{ transfer.id }},
+                    gateway: 'PAYSTACK'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.payment_url) {
+                window.location.href = data.payment_url;
+            } else {
+                throw new Error(data.error || 'Payment initialization failed');
+            }
+        } catch (error) {
+            console.error('Payment error:', error);
+            alert('Payment failed: ' + error.message);
+            submitButton.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %} 

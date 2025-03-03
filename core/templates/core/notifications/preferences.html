@@ -1,0 +1,141 @@
+{% extends 'core/base.html' %}
+{% load notification_tags %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Notification Preferences</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="notification-preferences-form">
+                        {% csrf_token %}
+                        
+                        <!-- General Preferences -->
+                        <h5 class="card-title mb-3">General Settings</h5>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="email_notifications" name="email_notifications"
+                                       {% if preferences.email_notifications %}checked{% endif %}>
+                                <label class="form-check-label" for="email_notifications">
+                                    Email Notifications
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="push_notifications" name="push_notifications"
+                                       {% if preferences.push_notifications %}checked{% endif %}>
+                                <label class="form-check-label" for="push_notifications">
+                                    Push Notifications
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Notification Types -->
+                        <h5 class="card-title mb-3">Notification Types</h5>
+                        {% for type_code, type_label in notification_types %}
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    {% with field_name=type_code|lower %}
+                                        {% if type_code == 'PRICE' %}
+                                            {% with field_name='price_alerts' %}
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="{{ field_name }}" name="{{ field_name }}"
+                                                       {% if preferences.price_alerts %}checked{% endif %}>
+                                                <label class="form-check-label" for="{{ field_name }}">
+                                                    {{ type_label }}
+                                                </label>
+                                            {% endwith %}
+                                        {% elif type_code == 'APP_APPROVAL' %}
+                                            {% with field_name='app_approval_notifications' %}
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="{{ field_name }}" name="{{ field_name }}"
+                                                       {% if preferences.app_approval_notifications %}checked{% endif %}>
+                                                <label class="form-check-label" for="{{ field_name }}">
+                                                    {{ type_label }}
+                                                </label>
+                                            {% endwith %}
+                                        {% else %}
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="{{ field_name }}_notifications" name="{{ field_name }}_notifications"
+                                                   {% if field_name == 'investment' and preferences.investment_notifications %}checked
+                                                   {% elif field_name == 'system' and preferences.system_notifications %}checked
+                                                   {% elif field_name == 'milestone' and preferences.milestone_notifications %}checked
+                                                   {% elif field_name == 'app_update' and preferences.app_update_notifications %}checked
+                                                   {% elif field_name == 'funding_goal' and preferences.funding_goal_notifications %}checked
+                                                   {% elif field_name == 'dividend' and preferences.dividend_notifications %}checked
+                                                   {% elif field_name == 'security' and preferences.security_notifications %}checked
+                                                   {% elif field_name == 'maintenance' and preferences.maintenance_notifications %}checked
+                                                   {% elif field_name == 'news' and preferences.news_notifications %}checked
+                                                   {% endif %}>
+                                            <label class="form-check-label" for="{{ field_name }}_notifications">
+                                                {{ type_label }}
+                                            </label>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        <!-- Price Alert Settings -->
+                        <h5 class="card-title mb-3">Price Alert Settings</h5>
+                        <div class="mb-3">
+                            <label for="price_alert_threshold" class="form-label">
+                                Price Change Threshold (%)
+                            </label>
+                            <input type="number" class="form-control" 
+                                   id="price_alert_threshold" name="price_alert_threshold"
+                                   value="{{ preferences.price_alert_threshold }}"
+                                   min="0" step="0.1">
+                            <div class="form-text">
+                                Notify me when price changes by this percentage or more
+                            </div>
+                        </div>
+                        
+                        <!-- Quiet Hours -->
+                        <h5 class="card-title mb-3">Quiet Hours</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="quiet_hours_start" class="form-label">Start Time</label>
+                                <input type="time" class="form-control" 
+                                       id="quiet_hours_start" name="quiet_hours_start"
+                                       value="{{ preferences.quiet_hours_start|time:'H:i'|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="quiet_hours_end" class="form-label">End Time</label>
+                                <input type="time" class="form-control" 
+                                       id="quiet_hours_end" name="quiet_hours_end"
+                                       value="{{ preferences.quiet_hours_end|time:'H:i'|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Save Preferences</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('notification-preferences-form');
+    form.addEventListener('submit', function(e) {
+        // Get all form data
+        const formData = new FormData(this);
+        console.log('Form data being submitted:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key + ': ' + value);
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

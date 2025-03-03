@@ -1,0 +1,37 @@
+<div class="market-data-container">
+    <div class="market-overview">
+        <h3>Market Overview</h3>
+        <div id="market-summary"></div>
+    </div>
+    
+    <div class="category-data">
+        <h3>Category Performance</h3>
+        <div id="category-charts"></div>
+    </div>
+    
+    <div class="market-news">
+        <h3>Latest News</h3>
+        <div id="news-feed"></div>
+    </div>
+</div>
+
+<script src="{% static 'js/market_data.js' %}"></script>
+<script>
+    // Initialize market data display
+    document.addEventListener('DOMContentLoaded', function() {
+        marketData.onUpdate(function(data) {
+            updateMarketDisplay(data);
+        });
+    });
+    
+    function updateMarketDisplay(data) {
+        // Update market summary
+        const summaryEl = document.getElementById('market-summary');
+        // Update charts
+        const chartsEl = document.getElementById('category-charts');
+        // Update news feed
+        const newsEl = document.getElementById('news-feed');
+        
+        // Implementation of display updates...
+    }
+</script>

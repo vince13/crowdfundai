@@ -1,0 +1,94 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Moderation Log</h1>
+        <a href="{% url 'core:moderation_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Moderator</th>
+                            <th>Action</th>
+                            <th>Content</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                            <tr>
+                                <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ log.moderator.username }}</td>
+                                <td>
+                                    <span class="badge bg-{{ log.action|lower }}">
+                                        {{ log.get_action_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ log.content_object.get_absolute_url }}" target="_blank">
+                                        {{ log.content_object }}
+                                    </a>
+                                </td>
+                                <td>{{ log.notes|truncatechars:50 }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    No moderation actions logged yet.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if logs.has_other_pages %}
+                <nav aria-label="Moderation log pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if logs.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ logs.previous_page_number }}">
+                                    Previous
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for i in logs.paginator.page_range %}
+                            <li class="page-item {% if logs.number == i %}active{% endif %}">
+                                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endfor %}
+
+                        {% if logs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ logs.next_page_number }}">
+                                    Next
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .badge.bg-review { background-color: #17a2b8; }
+    .badge.bg-approve { background-color: #28a745; }
+    .badge.bg-reject { background-color: #dc3545; }
+    .badge.bg-flag { background-color: #ffc107; }
+    .badge.bg-update { background-color: #6c757d; }
+</style>
+{% endblock %}
+{% endblock %} 

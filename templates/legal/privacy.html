@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+        <h1 class="text-3xl font-bold mb-6">Privacy Policy</h1>
+        
+        {% if last_updated %}
+        <p class="text-gray-600 mb-6">Last updated: {{ last_updated|date:"F j, Y" }}</p>
+        {% endif %}
+
+        <div class="prose prose-lg">
+            <h2 class="text-2xl font-semibold mb-4">1. Information We Collect</h2>
+            <p class="mb-4">
+                We collect information that you provide directly to us, including:
+            </p>
+            <ul class="list-disc pl-6 mb-4">
+                <li>Personal identification information (Name, email address, phone number)</li>
+                <li>Financial information for investment purposes</li>
+                <li>Profile information and preferences</li>
+                <li>Communication data between users</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mb-4">2. How We Use Your Information</h2>
+            <p class="mb-4">
+                We use the collected information for various purposes:
+            </p>
+            <ul class="list-disc pl-6 mb-4">
+                <li>To provide and maintain our service</li>
+                <li>To notify you about changes to our service</li>
+                <li>To provide customer support</li>
+                <li>To process transactions</li>
+                <li>To improve our platform</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mb-4">3. Data Security</h2>
+            <p class="mb-4">
+                We implement appropriate security measures to protect your personal information. However, no method of transmission over the Internet is 100% secure, and we cannot guarantee absolute security.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">4. Data Sharing</h2>
+            <p class="mb-4">
+                We may share your information with:
+            </p>
+            <ul class="list-disc pl-6 mb-4">
+                <li>Service providers and business partners</li>
+                <li>Legal authorities when required by law</li>
+                <li>Other users (only information you choose to make public)</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mb-4">5. Your Rights</h2>
+            <p class="mb-4">
+                You have certain rights regarding your personal data:
+            </p>
+            <ul class="list-disc pl-6 mb-4">
+                <li>Right to access your data</li>
+                <li>Right to correct inaccurate data</li>
+                <li>Right to delete your data</li>
+                <li>Right to restrict processing</li>
+                <li>Right to data portability</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mb-4">6. Cookies</h2>
+            <p class="mb-4">
+                We use cookies and similar tracking technologies to track activity on our platform and hold certain information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">7. Changes to This Policy</h2>
+            <p class="mb-4">
+                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "last updated" date.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">8. Contact Us</h2>
+            <p class="mb-4">
+                If you have any questions about this Privacy Policy, please contact us at support@aiappmarketplace.com
+            </p>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="mt-8 border-t pt-6">
+            <form id="acceptPrivacyForm" class="flex items-center">
+                {% csrf_token %}
+                <input type="hidden" name="agreement_type" value="privacy">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                    Accept Privacy Policy
+                </button>
+            </form>
+        </div>
+
+        <script>
+            document.getElementById('acceptPrivacyForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                fetch('{% url "accept_agreement" %}', {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Privacy Policy accepted successfully');
+                        window.location.reload();
+                    } else {
+                        alert('Error accepting Privacy Policy');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error accepting Privacy Policy');
+                });
+            });
+        </script>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

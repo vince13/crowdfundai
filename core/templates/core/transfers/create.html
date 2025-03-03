@@ -1,0 +1,122 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Create Percentage Transfer</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Investment Information -->
+                    <div class="mb-4">
+                        <h5>Investment Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>App:</strong> {{ app.name }}</p>
+                                <p>
+                                    <strong>Current Price per %:</strong><br>
+                                    ₦{{ app.price_per_percentage|floatformat:2|intcomma }}
+                                </p>
+                                <p><strong>Your Percentage:</strong> {{ ownership.percentage_owned|floatformat:2 }}%</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Currency:</strong> NGN</p>
+                                <p><strong>Lock-in Period:</strong> {{ app.lock_in_period }} days</p>
+                                <p>
+                                    <strong>Total Value:</strong><br>
+                                    ₦{{ ownership.percentage_owned|multiply:app.price_per_percentage|floatformat:2|intcomma }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not can_transfer %}
+                        <div class="alert alert-warning">
+                            Your investment is still in the lock-in period. You can transfer after {{ lock_in_end_date|date:"F j, Y" }}.
+                        </div>
+                    {% else %}
+                        <!-- Transfer Form -->
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="percentage_amount" class="form-label">Percentage to Transfer</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="percentage_amount" name="percentage_amount" 
+                                           min="0.01" max="{{ ownership.percentage_owned }}" step="0.01" required>
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">
+                                    Value: <span id="transfer-value">₦0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="price_per_percentage" class="form-label">Price per Percentage</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="number" class="form-control" id="price_per_percentage" name="price_per_percentage" 
+                                           step="0.01" min="{{ app.price_per_percentage }}" value="{{ app.price_per_percentage }}" required>
+                                </div>
+                                <div class="form-text">
+                                    Minimum price: ₦{{ app.price_per_percentage|floatformat:2|intcomma }} per %
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="total_value" class="form-label">Total Value</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₦</span>
+                                    <input type="text" class="form-control" id="total_value" readonly>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Create Transfer</button>
+                                <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if can_transfer %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const percentageInput = document.getElementById('percentage_amount');
+    const priceInput = document.getElementById('price_per_percentage');
+    const totalValueInput = document.getElementById('total_value');
+    const transferValueSpan = document.getElementById('transfer-value');
+    
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    }
+
+    function updateValues() {
+        const percentage = parseFloat(percentageInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const total = percentage * price;
+
+        // Update values
+        totalValueInput.value = formatCurrency(total);
+        transferValueSpan.textContent = '₦' + formatCurrency(total);
+    }
+
+    percentageInput.addEventListener('input', updateValues);
+    priceInput.addEventListener('input', updateValues);
+});
+</script>
+{% endif %}
+{% endblock %} 

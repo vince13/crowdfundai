@@ -1,0 +1,159 @@
+{% extends "core/base.html" %}
+
+{% block title %}Release #{{ release.id }} - {{ release.transaction.app.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'core:release_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Releases
+        </a>
+    </div>
+
+    <!-- Release Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="card-title mb-0">Release #{{ release.id }}</h2>
+                <span class="badge {% if release.status == 'PENDING' %}bg-warning
+                                 {% elif release.status == 'APPROVED' %}bg-success
+                                 {% elif release.status == 'REJECTED' %}bg-danger
+                                 {% elif release.status == 'PROCESSING' %}bg-info
+                                 {% elif release.status == 'COMPLETED' %}bg-primary
+                                 {% else %}bg-secondary{% endif %}">
+                    {{ release.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Release Details -->
+    <div class="row">
+        <!-- Main Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0 text-bodysecondary">Release Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 text-body-secondary">App:</dt>
+                        <dd class="col-sm-9 text-body-secondary">
+                            <a href="{% url 'core:app_detail' release.transaction.app.id %}" class="text-decoration-none text-body-secondary">
+                                {{ release.transaction.app.name }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Amount:</dt>
+                        <dd class="col-sm-9 text-body-secondary">₦{{ release.amount }}</dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Transaction ID:</dt>
+                        <dd class="col-sm-9 text-body-secondary">#{{ release.transaction.id }}</dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Requested By:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.requested_by.get_full_name|default:release.requested_by.username }}</dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Request Date:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.request_date|date:"M d, Y H:i" }}</dd>
+
+                        {% if release.request_notes %}
+                        <dt class="col-sm-3 text-body-secondary">Request Notes:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.request_notes }}</dd>
+                        {% endif %}
+
+                        {% if release.approval_requested_at %}
+                        <dt class="col-sm-3 text-body-secondary">Approval Requested:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.approval_requested_at|date:"M d, Y H:i" }}</dd>
+                        {% endif %}
+
+                        {% if release.approved_by %}
+                        <dt class="col-sm-3 text-body-secondary">Approved By:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.approved_by.get_full_name }}</dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Approval Date:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.approval_date|date:"M d, Y H:i" }}</dd>
+
+                        {% if release.approval_notes %}
+                        <dt class="col-sm-3 text-body-secondary">Approval Notes:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.approval_notes }}</dd>
+                        {% endif %}
+                        {% endif %}
+
+                        {% if release.rejected_by %}
+                        <dt class="col-sm-3 text-body-secondary">Rejected By:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.rejected_by.get_full_name }}</dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Rejection Date:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.rejected_at|date:"M d, Y H:i" }}</dd>
+
+                        <dt class="col-sm-3 text-body-secondary">Rejection Reason:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.rejection_reason }}</dd>
+                        {% endif %}
+
+                        {% if release.processed_date %}
+                        <dt class="col-sm-3 text-body-secondary">Processed Date:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.processed_date|date:"M d, Y H:i" }}</dd>
+                        {% endif %}
+
+                        {% if release.reference %}
+                        <dt class="col-sm-3 text-body-secondary">Reference:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.reference }}</dd>
+                        {% endif %}
+
+                        {% if release.failure_reason %}
+                        <dt class="col-sm-3 text-body-secondary">Failure Reason:</dt>
+                        <dd class="col-sm-9 text-body-secondary">{{ release.failure_reason }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Sidebar -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if can_request_approval %}
+                    <form action="{% url 'core:request_approval' release.id %}" method="post" class="mb-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-paper-plane"></i> Request Approval
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if can_approve and release.requires_approval %}
+                    <a href="{% url 'core:approve_release' release.id %}" class="btn btn-success w-100 mb-3">
+                        <i class="fas fa-check"></i> Review Approval Request
+                    </a>
+                    {% endif %}
+
+                    {% if can_process and release.status == 'APPROVED' %}
+                    <a href="{% url 'core:process_release' release.id %}" class="btn btn-warning w-100">
+                        <i class="fas fa-cog"></i> Process Release
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if release.status == 'PENDING' and not release.approval_requested_at %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Next Steps</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        This release request needs to be submitted for approval before it can be processed.
+                        Click the "Request Approval" button when you're ready to proceed.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

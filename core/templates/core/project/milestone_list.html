@@ -1,0 +1,234 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Project Milestones</h4>
+                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#milestoneSamples">
+                        <i class="bi bi-lightbulb"></i> View Sample Milestones
+                    </button>
+                </div>
+
+                <!-- Milestone Samples Section -->
+                <div class="collapse" id="milestoneSamples">
+                    <div class="card-body border-bottom bg-light">
+                        <h5 class="text-primary"><i class="bi bi-info-circle"></i> Sample Milestones for AI Projects</h5>
+                        
+                        <div class="accordion" id="sampleMilestonesAccordion">
+                            <!-- MVP Development Sample -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mvpSample">
+                                        MVP Development (30%)
+                                    </button>
+                                </h2>
+                                <div id="mvpSample" class="accordion-collapse collapse" data-bs-parent="#sampleMilestonesAccordion">
+                                    <div class="accordion-body">
+                                        <strong>Description:</strong> Development of core AI functionality and basic user interface
+                                        <br><br>
+                                        <strong>Key Deliverables:</strong>
+                                        <ul>
+                                            <li>Core AI model implementation</li>
+                                            <li>Basic API endpoints</li>
+                                            <li>MVP user interface</li>
+                                            <li>Initial testing results</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Testing & Optimization Sample -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#testingSample">
+                                        Testing & Optimization (25%)
+                                    </button>
+                                </h2>
+                                <div id="testingSample" class="accordion-collapse collapse" data-bs-parent="#sampleMilestonesAccordion">
+                                    <div class="accordion-body">
+                                        <strong>Description:</strong> Comprehensive testing and performance optimization
+                                        <br><br>
+                                        <strong>Key Deliverables:</strong>
+                                        <ul>
+                                            <li>Performance benchmarks</li>
+                                            <li>Security audit results</li>
+                                            <li>Model accuracy improvements</li>
+                                            <li>Load testing reports</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Beta Launch Sample -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#betaSample">
+                                        Beta Launch (25%)
+                                    </button>
+                                </h2>
+                                <div id="betaSample" class="accordion-collapse collapse" data-bs-parent="#sampleMilestonesAccordion">
+                                    <div class="accordion-body">
+                                        <strong>Description:</strong> Limited public release and user feedback collection
+                                        <br><br>
+                                        <strong>Key Deliverables:</strong>
+                                        <ul>
+                                            <li>Beta version deployment</li>
+                                            <li>User documentation</li>
+                                            <li>Initial user feedback analysis</li>
+                                            <li>Bug tracking and resolution</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Production Release Sample -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#productionSample">
+                                        Production Release (20%)
+                                    </button>
+                                </h2>
+                                <div id="productionSample" class="accordion-collapse collapse" data-bs-parent="#sampleMilestonesAccordion">
+                                    <div class="accordion-body">
+                                        <strong>Description:</strong> Full production deployment and marketing launch
+                                        <br><br>
+                                        <strong>Key Deliverables:</strong>
+                                        <ul>
+                                            <li>Production environment setup</li>
+                                            <li>Marketing materials</li>
+                                            <li>Support documentation</li>
+                                            <li>Analytics dashboard</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <strong>Tips for Setting Milestones:</strong>
+                            <ul class="mb-0">
+                                <li>Break down the project into clear, measurable phases</li>
+                                <li>Include specific, verifiable deliverables</li>
+                                <li>Set realistic timelines for each phase</li>
+                                <li>Ensure release percentages total 100%</li>
+                                <li>Document evidence requirements for each deliverable</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            
+            <!-- Milestone List -->
+            <div class="milestone-list mt-4">
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% for milestone in milestones %}
+                    <div class="col">
+                        <div class="card h-100 border border-1 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="card-title">{{ milestone.title }}</h5>
+                                        <p class="card-text text-muted">{{ milestone.description }}</p>
+                                        <p class="card-text">
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-coins"></i> Release: {{ milestone.release_percentage }}%
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <span class="badge {% if milestone.status == 'COMPLETED' %}bg-success
+                                                      {% elif milestone.status == 'IN_PROGRESS' %}bg-primary
+                                                      {% elif milestone.status == 'DELAYED' %}bg-warning
+                                                      {% elif milestone.status == 'VERIFICATION_REQUESTED' %}bg-info text-dark
+                                                      {% elif milestone.status == 'VERIFIED' %}bg-success
+                                                      {% elif milestone.status == 'REJECTED' %}bg-danger
+                                                      {% else %}bg-secondary{% endif %}">
+                                        {{ milestone.get_status_display }}
+                                    </span>
+                                </div>
+                                
+                                <div class="progress mt-3 mb-2" style="height: 8px;">
+                                    <div class="progress-bar {% if milestone.progress == 100 %}bg-success{% else %}bg-info{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ milestone.progress }}%"
+                                         aria-valuenow="{{ milestone.progress }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar"></i> Due: {{ milestone.target_date }}
+                                        </small>
+                                        {% if milestone.completion_date %}
+                                            <small class="text-success ms-3">
+                                                <i class="fas fa-check-circle"></i> 
+                                                Completed: {{ milestone.completion_date }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'core:milestone_detail' app.pk milestone.pk %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No milestones created yet. Use the form to add your first milestone.
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Add Milestone Form -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Add New Milestone</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Milestone
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Milestone Stats</h5>
+                    <div class="row text-center">
+                        <div class="col">
+                            <h3>{{ total_count }}</h3>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col">
+                            <h3>{{ completed_count }}</h3>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col">
+                            <h3>{{ in_progress_count }}</h3>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

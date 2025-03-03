@@ -1,0 +1,93 @@
+{% extends 'core/admin/base.html' %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Subscription Usage Tracking</h2>
+
+    <!-- Analytics Overview -->
+    <div class="row mb-4">
+        {% for feature, stats in analytics.items %}
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ feature|title }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Daily Usage</small>
+                        <h3 class="mb-0">{{ stats.total_daily_usage }}</h3>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Monthly Usage</small>
+                        <h3 class="mb-0">{{ stats.total_monthly_usage }}</h3>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <small class="text-warning">Near Limit</small>
+                            <h5 class="mb-0">{{ stats.users_near_limit }}</h5>
+                        </div>
+                        <div>
+                            <small class="text-danger">At Limit</small>
+                            <h5 class="mb-0">{{ stats.users_at_limit }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Usage Records Table -->
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Usage Records</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Feature</th>
+                            <th>Daily Usage</th>
+                            <th>Monthly Usage</th>
+                            <th>Daily Limit</th>
+                            <th>Monthly Limit</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in usage_records %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'core:admin_user_details' record.subscription.user.id %}">
+                                    {{ record.subscription.user.email }}
+                                </a>
+                            </td>
+                            <td>{{ record.feature_name }}</td>
+                            <td>{{ record.daily_usage }}</td>
+                            <td>{{ record.monthly_usage }}</td>
+                            <td>{{ record.get_usage_limits.daily_limit }}</td>
+                            <td>{{ record.get_usage_limits.monthly_limit }}</td>
+                            <td>
+                                <span class="badge bg-{{ record.status_class }}">
+                                    {% if record.status == 'at_limit' %}
+                                        At Limit
+                                    {% elif record.status == 'near_limit' %}
+                                        Near Limit
+                                    {% else %}
+                                        Normal
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>{{ record.last_used|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

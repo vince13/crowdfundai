@@ -1,0 +1,196 @@
+{% extends "core/base.html" %}
+
+{% block title %}Request Fund Release{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Request Fund Release</h1>
+        <a href="{% url 'core:release_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Releases
+        </a>
+    </div>
+
+    <!-- Request Form -->
+    <div class="row">
+        <div class="col-md-8">
+            {% if not eligible_milestones %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
+                        <h5>No Eligible Milestones</h5>
+                        <p class="text-muted mb-0">
+                            You don't have any milestones eligible for release at this time. 
+                            This could be because:
+                        </p>
+                        <ul class="text-start text-muted mt-3">
+                            <li>Your milestones haven't been verified yet</li>
+                            <li>All milestone funds have already been released</li>
+                            <li>You haven't set up any milestones with release percentages</li>
+                            <li>You haven't set up your bank account yet</li>
+                        </ul>
+                        <div class="mt-4">
+                            <a href="{% url 'core:app_list' %}" class="btn btn-primary">
+                                <i class="fas fa-tasks"></i> Manage App Milestones
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Milestone Selection -->
+                        <div class="mb-4">
+                            <label for="milestone_id" class="form-label">Select Milestone</label>
+                            <select name="milestone_id" id="milestone_id" class="form-select" required>
+                                <option value="">Choose a milestone...</option>
+                                {% for milestone in eligible_milestones %}
+                                {% if milestone.calculate_remaining_funds > 0 and milestone.release_percentage > 0 %}
+                                <option value="{{ milestone.id }}" 
+                                        data-amount="{{ milestone.calculate_remaining_funds }}"
+                                        data-percentage="{{ milestone.release_percentage }}"
+                                        data-title="{{ milestone.title }}"
+                                        data-description="{{ milestone.description }}">
+                                    {{ milestone.app.name }} - {{ milestone.title }} ({{ milestone.release_percentage }}% - Remaining: ₦{{ milestone.calculate_remaining_funds|floatformat:2 }})
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Only verified milestones with remaining funds and a release percentage greater than 0% are shown.
+                            </div>
+                        </div>
+
+                        <!-- Milestone Details -->
+                        <div id="milestone-details" class="mb-4 d-none">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title" id="milestone-title">-</h6>
+                                    <p class="text-muted small" id="milestone-description">-</p>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Release Percentage:</dt>
+                                        <dd class="col-sm-8" id="milestone-percentage">-</dd>
+                                        <dt class="col-sm-4">Available Amount:</dt>
+                                        <dd class="col-sm-8" id="milestone-amount">-</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="mb-4">
+                            <label for="amount" class="form-label">Amount to Release</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" name="amount" id="amount" class="form-control" 
+                                       step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-text">Enter the amount you wish to release from this milestone.</div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Request Notes</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="4"></textarea>
+                            <div class="form-text">
+                                Provide any additional information or context for this release request.
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Guidelines Sidebar -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Eligibility</h6>
+                        <ul class="mb-0 text-muted">
+                            <li>Milestone must be verified by admin</li>
+                            <li>Release amount cannot exceed milestone's allocated percentage</li>
+                            <li>Your payment account must be verified</li>
+                            <li>Multiple partial releases are allowed within milestone limit</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Processing Time</h6>
+                        <p class="mb-0">Release requests are typically processed within 1-2 business days after approval.</p>
+                    </div>
+                    <div>
+                        <h6>Documentation</h6>
+                        <p class="mb-0">Include any relevant milestone completion evidence or notes to help expedite the approval process.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-populate amount and show milestone details when milestone is selected
+    document.getElementById('milestone_id').addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        const amountInput = document.getElementById('amount');
+        const detailsDiv = document.getElementById('milestone-details');
+        const titleEl = document.getElementById('milestone-title');
+        const descriptionEl = document.getElementById('milestone-description');
+        const percentageSpan = document.getElementById('milestone-percentage');
+        const amountSpan = document.getElementById('milestone-amount');
+        
+        if (option.value) {
+            const maxAmount = parseFloat(option.dataset.amount).toFixed(2);
+            const percentage = option.dataset.percentage;
+            
+            amountInput.max = maxAmount;
+            amountInput.value = maxAmount;
+            
+            titleEl.textContent = option.dataset.title;
+            descriptionEl.textContent = option.dataset.description;
+            percentageSpan.textContent = percentage + '%';
+            amountSpan.textContent = '₦' + parseFloat(maxAmount).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            detailsDiv.classList.remove('d-none');
+        } else {
+            amountInput.value = '';
+            amountInput.removeAttribute('max');
+            detailsDiv.classList.add('d-none');
+        }
+    });
+
+    // Validate amount doesn't exceed milestone's calculated release amount
+    document.getElementById('amount').addEventListener('input', function() {
+        const option = document.getElementById('milestone_id').options[
+            document.getElementById('milestone_id').selectedIndex
+        ];
+        
+        if (option.value) {
+            const maxAmount = parseFloat(option.dataset.amount).toFixed(2);
+            if (parseFloat(this.value) > parseFloat(maxAmount)) {
+                this.value = maxAmount;
+            }
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %} 

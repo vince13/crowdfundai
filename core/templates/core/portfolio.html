@@ -1,0 +1,240 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load app_filters %}
+
+{% block title %}My Portfolio{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>My Portfolio</h1>
+        <a href="{% url 'core:investment_report' %}" class="btn btn-primary">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+            Generate Investment Report
+        </a>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Invested</h5>
+                    <h2 id="totalInvested">₦{{ stats.total_invested|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Portfolio Value</h5>
+                    <h2 id="portfolioValue">₦{{ stats.portfolio_value|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Return on Investment</h5>
+                    <h2 id="roi" class="text-dark">{{ stats.roi|floatformat:2 }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Portfolio Summary</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>Total Investment:</strong> ₦{{ stats.total_invested|floatformat:2|intcomma }}</p>
+                    <p class="mb-2"><strong>Current Value:</strong> ₦{{ stats.portfolio_value|floatformat:2|intcomma }}</p>
+                    <p class="mb-2"><strong>Total Return:</strong> 
+                        <span class="{% if stats.roi >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            ₦{{ stats.total_return|floatformat:2|intcomma }} ({{ stats.roi|floatformat:2 }}%)
+                        </span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2"><strong>Number of Apps:</strong> {{ stats.apps_invested }}</p>
+                    <p class="mb-2"><strong>Average Investment:</strong> ₦{{ stats.average_investment|floatformat:2|intcomma }}</p>
+                    <p class="mb-2"><strong>Funds in Escrow:</strong> ₦{{ stats.escrow_balance|floatformat:2|intcomma }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mb-0">Your Investments</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>App Name</th>
+                            <th>Percentage Owned</th>
+                            <th>Price per %</th>
+                            <th>Current Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="investmentsTableBody">
+                     
+                        {% for investment in investments %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'core:app_detail' investment.app.pk %}">
+                                        {{ investment.app.name }}
+                                    </a>
+                                </td>
+                                <td>{{ investment.percentage_bought|floatformat:2 }}%</td>
+                                <td>₦{{ investment.app.price_per_percentage|floatformat:2|intcomma }}</td>
+                                <td>₦{{ investment.amount_paid|floatformat:2|intcomma }}</td>
+                                <td>
+                                    {% if investment.app.status == 'ACTIVE' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif investment.app.status == 'PENDING' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif investment.app.status == 'COMPLETED' %}
+                                        <span class="badge bg-info">Completed</span>
+                                    {% elif investment.app.status == 'REJECTED' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% elif investment.app.status == 'SUSPENDED' %}
+                                        <span class="badge bg-secondary">Suspended</span>
+                                    {% elif investment.app.status == 'FUNDED' %}
+                                        <span class="badge bg-secondary">Funded</span>
+                                    {% else %}
+                                        <span class="badge bg-{{ investment.app.status|lower }}">
+                                            {{ investment.app.get_status_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    You don't have any investments yet.
+                                </td>
+                            </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize with default values if stats are null
+let lastUpdate = {
+    total_invested: {{ stats.total_invested|default:0|stringformat:"f" }},
+    portfolio_value: {{ stats.portfolio_value|default:0|stringformat:"f" }},
+    roi: {{ stats.roi|default:0|stringformat:"f" }},
+    apps_invested: {{ stats.apps_invested|default:0 }},
+    escrow_balance: {{ stats.escrow_balance|default:0|stringformat:"f" }}
+};
+
+// Function to format currency
+function formatCurrency(amount) {
+    return `₦${(parseFloat(amount) || 0).toLocaleString('en-NG', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
+}
+
+// Function to update portfolio stats
+function updatePortfolioStats() {
+    fetch("{% url 'core:api_portfolio_stats' %}", {
+        method: 'GET',
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Update stats cards
+        const totalInvestedEl = document.getElementById('totalInvested');
+        const portfolioValueEl = document.getElementById('portfolioValue');
+        const roiEl = document.getElementById('roi');
+        
+        if (totalInvestedEl) totalInvestedEl.textContent = formatCurrency(data.total_invested);
+        if (portfolioValueEl) portfolioValueEl.textContent = formatCurrency(data.portfolio_value);
+        if (roiEl) roiEl.textContent = `${(parseFloat(data.roi) || 0).toFixed(2)}%`;
+        
+        // Update summary section
+        const summarySection = document.querySelector('.card-body');
+        if (summarySection) {
+            const elements = {
+                totalInvestment: summarySection.querySelector('.col-md-6:first-child p:nth-child(1)'),
+                currentValue: summarySection.querySelector('.col-md-6:first-child p:nth-child(2)'),
+                totalReturn: summarySection.querySelector('.col-md-6:first-child p:nth-child(3)'),
+                numApps: summarySection.querySelector('.col-md-6:last-child p:nth-child(1)'),
+                avgInvestment: summarySection.querySelector('.col-md-6:last-child p:nth-child(2)'),
+                escrowBalance: summarySection.querySelector('.col-md-6:last-child p:nth-child(3)')
+            };
+            
+            if (elements.totalInvestment) {
+                elements.totalInvestment.innerHTML = `<strong>Total Investment:</strong> ${formatCurrency(data.total_invested)}`;
+            }
+            if (elements.currentValue) {
+                elements.currentValue.innerHTML = `<strong>Current Value:</strong> ${formatCurrency(data.portfolio_value)}`;
+            }
+            if (elements.totalReturn) {
+                const returnClass = (parseFloat(data.roi) || 0) >= 0 ? 'text-success' : 'text-danger';
+                elements.totalReturn.innerHTML = `<strong>Total Return:</strong> <span class="${returnClass}">${formatCurrency(data.total_return)} (${(parseFloat(data.roi) || 0).toFixed(2)}%)</span>`;
+            }
+            if (elements.numApps) {
+                elements.numApps.innerHTML = `<strong>Number of Apps:</strong> ${data.apps_invested || 0}`;
+            }
+            if (elements.avgInvestment) {
+                elements.avgInvestment.innerHTML = `<strong>Average Investment:</strong> ${formatCurrency(data.average_investment)}`;
+            }
+            if (elements.escrowBalance) {
+                elements.escrowBalance.innerHTML = `<strong>Funds in Escrow:</strong> ${formatCurrency(data.escrow_balance)}`;
+            }
+        }
+        
+        // Update investments table
+        const tableBody = document.getElementById('investmentsTableBody');
+        if (tableBody && data.investments) {
+            tableBody.innerHTML = data.investments.map(investment => `
+                <tr>
+                    <td>
+                        <a href="{% url 'core:app_detail' pk=0 %}".replace('0', investment.app.pk)>
+                            ${investment.app.name}
+                        </a>
+                    </td>
+                    <td>${investment.percentage_bought.toFixed(2)}%</td>
+                    <td>${formatCurrency(investment.app.price_per_percentage)}</td>
+                    <td>${formatCurrency(investment.amount_paid)}</td>
+                    <td>
+                        <span class="badge bg-${investment.app.status === 'ACTIVE' ? 'success' : 'warning'}">
+                            ${investment.app.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching portfolio stats:', error);
+    });
+}
+
+// Update stats every 5 seconds
+setInterval(updatePortfolioStats, 5000);
+
+// Initial update
+updatePortfolioStats();
+</script>
+{% endblock %} 

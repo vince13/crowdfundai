@@ -1,0 +1,107 @@
+{% if app.ai_assessment %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">
+            <i class="bi bi-graph-up"></i> AI Insight Score
+        </h5>
+        
+        <!-- Overall Score -->
+        <div class="text-center mb-4">
+            <div class="display-4 text-primary">{{ app.ai_assessment.overall_score|floatformat:0 }}</div>
+            <small class="text-muted">Overall Score</small>
+        </div>
+
+        <!-- Individual Scores -->
+        <div class="scores-breakdown">
+            <!-- Innovation Score -->
+            <div class="score-item mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted">Innovation</span>
+                    <span class="badge bg-info">{{ app.ai_assessment.innovation_score|floatformat:0 }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-info" role="progressbar" 
+                         style="width: {{ app.ai_assessment.innovation_score }}%" 
+                         aria-valuenow="{{ app.ai_assessment.innovation_score }}" 
+                        aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Potential Score -->
+            <div class="score-item mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted">Market Potential</span>
+                    <span class="badge bg-success">{{ app.ai_assessment.market_potential_score|floatformat:0 }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ app.ai_assessment.market_potential_score }}%" 
+                         aria-valuenow="{{ app.ai_assessment.market_potential_score }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Execution Capability Score -->
+            <div class="score-item mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted">Execution Capability</span>
+                    <span class="badge bg-primary">{{ app.ai_assessment.execution_capability_score|floatformat:0 }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-primary" role="progressbar" 
+                         style="width: {{ app.ai_assessment.execution_capability_score }}%" 
+                         aria-valuenow="{{ app.ai_assessment.execution_capability_score }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Insights -->
+        <!-- <div class="quick-insights mt-4">
+            <h6 class="text-muted mb-3">Key Insights</h6>
+            <ul class="list-unstyled">
+                {% for insight in app.ai_assessment.ai_insights|slice:":3" %}
+                <li class="mb-2">
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    {{ insight }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div> -->
+
+        <!-- View Details Button -->
+        <div class="d-grid gap-2 mt-3">
+            <a href="{% url 'core:app_insights' app.pk %}" class="btn btn-primary">
+                <i class="bi bi-graph-up me-2"></i> View Full Analysis
+            </a>
+        </div>
+    </div>
+</div>
+{% else %}
+    {% if user == app.developer %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">AI Assessment</h5>
+                <p class="card-text">Complete the AI assessment to get insights and recommendations.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#aiAssessmentModal">
+                    <i class="bi bi-brain me-2"></i> Complete Assessment
+                </button>
+            </div>
+        </div>
+    {% else %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    AI assessment pending for this app
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endif %} 

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Terms of Service{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+        <h1 class="text-3xl font-bold mb-6">Terms of Service</h1>
+        
+        {% if last_updated %}
+        <p class="text-gray-600 mb-6">Last updated: {{ last_updated|date:"F j, Y" }}</p>
+        {% endif %}
+
+        <div class="prose prose-lg">
+            <h2 class="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
+            <p class="mb-4">
+                By accessing and using this platform, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">2. Use License</h2>
+            <p class="mb-4">
+                Permission is granted to temporarily download one copy of the materials (information or software) on AI App Marketplace for personal, non-commercial transitory viewing only.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">3. Investment Risks</h2>
+            <p class="mb-4">
+                Investing in AI applications and startups involves substantial risk. You should only invest what you can afford to lose. Past performance is not indicative of future results.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">4. User Responsibilities</h2>
+            <ul class="list-disc pl-6 mb-4">
+                <li>Provide accurate information during registration</li>
+                <li>Maintain the security of your account</li>
+                <li>Comply with all applicable laws and regulations</li>
+                <li>Respect intellectual property rights</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mb-4">5. Platform Rules</h2>
+            <p class="mb-4">
+                We reserve the right to modify or discontinue the service at any time. Users must not:
+            </p>
+            <ul class="list-disc pl-6 mb-4">
+                <li>Engage in fraudulent activities</li>
+                <li>Manipulate platform metrics</li>
+                <li>Harass other users</li>
+                <li>Violate any applicable laws</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mb-4">6. Intellectual Property</h2>
+            <p class="mb-4">
+                The platform and its original content, features, and functionality are owned by AI App Marketplace and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">7. Termination</h2>
+            <p class="mb-4">
+                We may terminate or suspend your account and bar access to the platform immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever.
+            </p>
+
+            <h2 class="text-2xl font-semibold mb-4">8. Governing Law</h2>
+            <p class="mb-4">
+                These terms shall be governed by and construed in accordance with the laws of the jurisdiction in which the platform operates.
+            </p>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="mt-8 border-t pt-6">
+            <form id="acceptTermsForm" class="flex items-center">
+                {% csrf_token %}
+                <input type="hidden" name="agreement_type" value="terms">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                    Accept Terms
+                </button>
+            </form>
+        </div>
+
+        <script>
+            document.getElementById('acceptTermsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                fetch('{% url "accept_agreement" %}', {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Terms accepted successfully');
+                        window.location.reload();
+                    } else {
+                        alert('Error accepting terms');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error accepting terms');
+                });
+            });
+        </script>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

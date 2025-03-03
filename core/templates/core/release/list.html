@@ -1,0 +1,208 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load humanize %}
+{% load core_extras %}
+
+{% block title %}Fund Releases{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Fund Releases</h1>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control"
+                           value="{{ search_query|default:'' }}" placeholder="Search by app name, milestone...">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Releases List -->
+    <div class="card">
+        <div class="card-body">
+            {% if releases %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>App</th>
+                            <th>Type</th>
+                            <th>Milestone</th>
+                            <th>Total Amount</th>
+                            <th>Platform Fee (5%)</th>
+                            <th>Net Amount</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for release in releases %}
+                        <tr>
+                            <td>#{{ release.id }}</td>
+                            <td>
+                                <a href="{% url 'core:app_detail' release.app.id %}" 
+                                   class="text-decoration-none">
+                                    {{ release.app.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-info text-dark">Milestone Release</span>
+                            </td>
+                            <td>{{ release.milestone.title }}</td>
+                            <td>₦{{ release.amount|floatformat:2|intcomma }}</td>
+                            <td class="text-danger">₦{{ release.amount|multiply:0.05|floatformat:2|intcomma }}</td>
+                            <td class="text-success">₦{{ release.amount|multiply:0.95|floatformat:2|intcomma }}</td>
+                            <td>
+                                <span class="badge {% if release.status == 'PENDING' %}bg-warning
+                                                  {% elif release.status == 'APPROVED' %}bg-info
+                                                  {% elif release.status == 'COMPLETED' %}bg-success
+                                                  {% elif release.status == 'FAILED' %}bg-danger
+                                                  {% elif release.status == 'REJECTED' %}bg-secondary
+                                                  {% else %}bg-secondary{% endif %}">
+                                    {{ release.get_status_display }}
+                                </span>
+                                {% if release.status == 'FAILED' %}
+                                <button type="button" class="btn btn-warning btn-sm ms-2" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#retryModal{{ release.pk }}">
+                                    <i class="fas fa-redo"></i> Retry
+                                </button>
+                                {% endif %}
+                            </td>
+                            <td>{{ release.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if release.status == 'FAILED' %}
+                                <!-- Retry Modal -->
+                                <div class="modal fade" id="retryModal{{ release.pk }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Retry Fund Release</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'core:process_escrow_release' release.pk %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <p>Previous attempt failed with error:</p>
+                                                    <div class="alert alert-warning">
+                                                        {{ release.notes }}
+                                                    </div>
+                                                    <p>Are you sure you want to retry releasing ₦{{ release.amount|floatformat:2 }} to {{ release.app.developer.email }}?</p>
+                                                    <div class="mb-3">
+                                                        <label for="retryNotes{{ release.pk }}" class="form-label">Additional Notes (optional)</label>
+                                                        <textarea class="form-control" id="retryNotes{{ release.pk }}" 
+                                                                  name="notes" rows="3"></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" name="action" value="retry" class="btn btn-warning">
+                                                        <i class="fas fa-redo"></i> Retry Release
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if releases.has_other_pages %}
+            <nav aria-label="Release pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if releases.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ releases.previous_page_number }}&status={{ current_status }}&search={{ search_query }}">
+                            Previous
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+
+                    {% for num in releases.paginator.page_range %}
+                    {% if releases.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&status={{ current_status }}&search={{ search_query }}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if releases.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ releases.next_page_number }}&status={{ current_status }}&search={{ search_query }}">
+                            Next
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-4">
+                <table class="table">
+                    <tr>
+                        <td colspan="10" class="text-center">
+                            <p class="text-muted mb-0">No releases found.</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-submit form when status changes
+    document.getElementById('status').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}
+{% endblock %} 

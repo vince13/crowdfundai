@@ -1,0 +1,156 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="transaction-history container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Transaction History - {{ app.name }}</h1>
+        <a href="{% url 'core:escrow-reports-list' %}" class="btn btn-secondary">Back to Reports</a>
+    </div>
+
+    <!-- Escrow Summary Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Escrow Summary</h5>
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="summary-item">
+                        <label>Total Deposits</label>
+                        <strong>${{ escrow_summary.total_deposits|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-item">
+                        <label>Total Releases</label>
+                        <strong>${{ escrow_summary.total_releases|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-item">
+                        <label>Total Refunds</label>
+                        <strong>${{ escrow_summary.total_refunds|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-item">
+                        <label>In Dispute</label>
+                        <strong>${{ escrow_summary.funds_in_dispute|floatformat:2 }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="summary-item">
+                        <label>Available Balance</label>
+                        <strong>${{ escrow_summary.available_balance|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Transactions</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Investor</th>
+                            <th>Status</th>
+                            <th>Milestone</th>
+                            <th>Gateway</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr class="{% if tx.dispute_status != 'NO_DISPUTE' %}table-warning{% endif %}">
+                            <td>{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <span class="badge {% if tx.transaction_type == 'DEPOSIT' %}bg-success{% elif tx.transaction_type == 'RELEASE' or tx.transaction_type == 'MILESTONE_RELEASE' %}bg-primary{% else %}bg-warning{% endif %}">
+                                    {{ tx.transaction_type }}
+                                </span>
+                            </td>
+                            <td>${{ tx.amount|floatformat:2 }}</td>
+                            <td>{{ tx.investor.email }}</td>
+                            <td>
+                                <span class="badge {% if tx.status == 'COMPLETED' %}bg-success{% elif tx.status == 'PENDING' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ tx.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if tx.milestone %}
+                                    {{ tx.milestone.title }}
+                                    {% if tx.release_percentage %}
+                                        ({{ tx.release_percentage }}%)
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ tx.payment_gateway }}</td>
+                            <td>{{ tx.gateway_reference }}</td>
+                        </tr>
+                        {% if tx.dispute_status != 'NO_DISPUTE' %}
+                        <tr class="table-warning">
+                            <td colspan="8">
+                                <strong>Dispute Status:</strong> {{ tx.dispute_status }}
+                                {% if tx.dispute_reason %}
+                                    <br><strong>Reason:</strong> {{ tx.dispute_reason }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.transaction-history .card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.transaction-history .card-title {
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 10px;
+}
+
+.summary-item label {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.summary-item strong {
+    display: block;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.badge {
+    padding: 6px 10px;
+}
+</style>
+{% endblock %} 

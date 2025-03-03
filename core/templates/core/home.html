@@ -1,0 +1,325 @@
+{% extends 'core/base.html' %}
+{% load currency_tags %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to FundAfrica</h1>
+    <p class="lead">Invest in the future of AI applications or list your AI-powered app for funding.</p>
+    {% if not user.is_authenticated %}
+        <p>
+            <a class="btn btn-primary btn-lg" href="{% url 'core:register' %}" role="button">Get Started</a>
+        </p>
+    {% endif %}
+</div>
+
+<!-- Featured Apps Section -->
+<div class="mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h2 class="mb-0">Featured Apps</h2>
+        <a href="{% url 'core:app_list' %}?type=LISTED" class="btn btn-outline-primary">
+            View All Fundable Apps
+        </a>
+    </div>
+<div class="row">
+    {% for app in featured_apps %}
+            {% if app.listing_type == 'LISTED' %}
+        <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm hover-shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ app.name }}</h5>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                <i class="bi bi-check-circle-fill me-1"></i>{{ app.get_status_display }}
+                            </span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+                                {{ app.get_funding_round_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <p class="card-text">{{ app.description|truncatewords:13 }}</p>
+                        
+                        <div class="progress mb-3" style="height: 10px;">
+                        {% with progress=app.get_funding_progress %}
+                        <div class="progress-bar {% if progress > 50 %}bg-success{% else %}bg-primary{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ progress|floatformat:1 }}%">
+                        </div>
+                        {% endwith %}
+                    </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light-subtle border">
+                                    <small class="text-muted d-block text-truncate">Price Per %</small>
+                                    <span class="fw-semibold text-truncate">₦{{ app.price_per_percentage|floatformat:2|intcomma }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light-subtle border">
+                                    <small class="text-muted d-block text-truncate">Available Equity</small>
+                                    <span class="fw-semibold text-truncate">{{ app.remaining_percentage|floatformat:0 }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Goal: {% dual_currency app.funding_goal user_currency alt_currency usd_rate %}
+                        </small>
+                    <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-primary">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Community Apps Section -->
+<div class="mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h2 class="mb-0">Community Apps</h2>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'core:app_list' %}?type=NOMINATED" class="btn btn-outline-primary">
+                View All Community Apps
+            </a>
+            <a href="{% url 'core:suggest_app' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Suggest App
+            </a>
+        </div>
+    </div>
+    <div class="row">
+        {% for app in featured_apps %}
+            {% if app.listing_type == 'NOMINATED' or app.listing_type == 'COMMUNITY' %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm hover-shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">{{ app.name }}</h5>
+                            <span class="badge {% if app.listing_type == 'NOMINATED' %}bg-purple-subtle text-muted border border-muted-subtle{% else %}bg-indigo-subtle text-muted border border-muted-subtle{% endif %} rounded-pill">
+                                <i class="bi {% if app.listing_type == 'NOMINATED' %}bi-lightbulb-fill{% else %}bi-people-fill{% endif %} me-1 text-muted"></i>{{ app.get_listing_type_display }}
+                            </span>
+                        </div>
+                        <p class="card-text">{{ app.description|truncatewords:13 }}</p>
+                        
+                        <div class="p-3 rounded bg-light-subtle border mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">Market Interest</small>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-graph-up text-success me-1"></i>
+                                    <span class="fw-semibold">{{ app.engagement_score|default:"0" }}%</span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex gap-3">
+                                    <span class="text-muted small"><i class="bi bi-eye me-1"></i>{{ app.view_count|default:"0"|intcomma }}</span>
+                                    <span class="text-muted small"><i class="bi bi-heart-fill text-danger me-1"></i>{{ app.get_total_likes|default:"0"|intcomma }}</span>
+                                    <span class="text-muted small"><i class="bi bi-chat-dots me-1"></i>{{ app.get_total_comments|default:"0"|intcomma }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-primary-subtle text-primary">
+                                    <i class="bi bi-arrow-up-circle me-1"></i>{{ app.get_total_upvotes|default:"0"|intcomma }}
+                                </span>
+                                <span class="badge bg-info-subtle text-info">
+                                    <i class="bi bi-clock me-1"></i>{{ app.nomination_timeline.estimated_months|default:"TBD" }} months
+                                </span>
+                            </div>
+                            <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-primary">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+        </div>
+            {% endif %}
+    {% endfor %}
+    </div>
+</div>
+
+<!-- Success Stories Section -->
+<h2 class="mt-5">Success Stories <span class="badge bg-success ms-2">Funded</span></h2>
+<div class="row">
+    {% for app in funded_apps %}
+        <div class="col-md-4 mb-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ app.name }}</h5>
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle-fill me-1"></i>{{ app.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="card-text">{{ app.description|truncatewords:13 }}</p>
+                    <div class="funding-details mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Raised</small>
+                            <strong>₦{{ app.funding_goal|intcomma }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Investors</small>
+                            <strong>{{ app.get_investor_count }}</strong>
+                        </div>
+                    </div>
+                    <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-outline-success">View Success Story</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>No funded apps yet. Be the first to help an app reach its funding goal!
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Floating Hire Us Button -->
+<div class="floating-hire-us">
+    <button type="button" class="btn btn-primary rounded-circle shadow-lg" data-bs-toggle="modal" data-bs-target="#hireUsModal">
+        <i class="bi bi-briefcase-fill"></i>
+    </button>
+</div>
+
+<!-- Hire Us Modal -->
+<div class="modal fade" id="hireUsModal" tabindex="-1" aria-labelledby="hireUsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hireUsModalLabel">Hire Our Team</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="hireUsForm" action="{% url 'core:hire_us' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="project_type" class="form-label">Project Type</label>
+                        <select class="form-select" id="project_type" name="project_type" required>
+                            <option value="">Select Project Type</option>
+                            <option value="web">Web Development</option>
+                            <option value="mobile">Mobile App</option>
+                            <option value="ai">AI/ML Solution</option>
+                            <option value="blockchain">Blockchain</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Project Details</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+    {% if user.subscription %}
+        {# Show subscription content #}
+        <div class="subscription-info">
+            <p>Your current plan: {{ user.subscription.plan_name|default:"No Plan" }}</p>
+        </div>
+    {% else %}
+        {# Show content for users without subscription #}
+        <div class="subscription-info">
+            <p>You don't have an active subscription</p>
+            <a href="{% url 'core:subscription_plans' %}" class="btn btn-primary">View Plans</a>
+        </div>
+    {% endif %}
+{% endif %}
+
+<style>
+.floating-hire-us {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.floating-hire-us .btn {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.floating-hire-us .btn:hover {
+    transform: scale(1.1);
+}
+
+.floating-hire-us .bi {
+    font-size: 24px;
+}
+
+.hover-shadow {
+    transition: all 0.2s ease-in-out;
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+
+.bg-indigo-subtle {
+    background-color: rgba(102, 16, 242, 0.1) !important;
+}
+.text-indigo {
+    color: #6610f2 !important;
+}
+.border-indigo-subtle {
+    border-color: rgba(102, 16, 242, 0.3) !important;
+}
+.bg-purple-subtle {
+    background-color: rgba(137, 100, 255, 0.1) !important;
+}
+.text-purple {
+    color: #8964ff !important;
+}
+.border-purple-subtle {
+    border-color: rgba(137, 100, 255, 0.3) !important;
+}
+
+@media (max-width: 768px) {
+    .floating-hire-us .btn {
+        width: 50px;
+        height: 50px;
+    }
+
+    .floating-hire-us .bi {
+        font-size: 20px;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+    }
+
+    .badge {
+        font-size: 0.7rem;
+    }
+}
+</style>
+{% endblock %} 

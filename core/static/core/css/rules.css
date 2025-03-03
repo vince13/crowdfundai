@@ -1,0 +1,53 @@
+/* Rule Cards */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* JSON Display */
+pre {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+code {
+    color: #212529;
+    font-size: 0.875rem;
+}
+
+/* Action Buttons */
+.btn-group {
+    gap: 0.25rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Form Styling */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+textarea.form-control {
+    font-family: monospace;
+}
+
+/* Test Modal */
+.modal-dialog {
+    max-width: 600px;
+}
+
+#testContext {
+    font-family: monospace;
+    font-size: 0.875rem;
+} 

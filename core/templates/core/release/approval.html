@@ -1,0 +1,171 @@
+{% extends "core/base.html" %}
+
+{% block title %}Approve Release #{{ release.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'core:release_detail' release.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Release Details
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Release Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Release Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Release ID:</dt>
+                        <dd class="col-sm-9">#{{ release.id }}</dd>
+
+                        <dt class="col-sm-3">App:</dt>
+                        <dd class="col-sm-9">
+                            <a href="{% url 'core:app_detail' release.transaction.app.id %}" class="text-decoration-none">
+                                {{ release.transaction.app.name }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-3">Amount:</dt>
+                        <dd class="col-sm-9">₦{{ release.amount }}</dd>
+
+                        <dt class="col-sm-3">Requested By:</dt>
+                        <dd class="col-sm-9">{{ release.requested_by.get_full_name }}</dd>
+
+                        <dt class="col-sm-3">Request Date:</dt>
+                        <dd class="col-sm-9">{{ release.request_date|date:"M d, Y H:i" }}</dd>
+
+                        {% if release.request_notes %}
+                        <dt class="col-sm-3">Request Notes:</dt>
+                        <dd class="col-sm-9">{{ release.request_notes }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Approval Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Approval Decision</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Decision</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="action" value="approve" id="approve" required>
+                                <label class="btn btn-outline-success" for="approve">
+                                    <i class="fas fa-check"></i> Approve
+                                </label>
+
+                                <input type="radio" class="btn-check" name="action" value="reject" id="reject">
+                                <label class="btn btn-outline-danger" for="reject">
+                                    <i class="fas fa-times"></i> Reject
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4" required></textarea>
+                            <div class="form-text">
+                                Please provide a reason for your decision. This will be visible to the developer.
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                Submit Decision
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guidelines Sidebar -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Approval Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-3">Before Approving:</h6>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            Verify the app has met its funding goal
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            Check that the amount matches the transaction
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            Ensure there are no pending disputes
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            Confirm milestone completion if applicable
+                        </li>
+                    </ul>
+
+                    <h6 class="card-subtitle mb-3">Common Rejection Reasons:</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-times-circle text-danger"></i>
+                            Funding goal not met
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-times-circle text-danger"></i>
+                            Active disputes on transaction
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-times-circle text-danger"></i>
+                            Incomplete milestones
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-times-circle text-danger"></i>
+                            Insufficient documentation
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const notesField = document.getElementById('notes');
+    const approveBtn = document.getElementById('approve');
+    const rejectBtn = document.getElementById('reject');
+
+    function validateForm() {
+        const isDecisionSelected = approveBtn.checked || rejectBtn.checked;
+        const hasNotes = notesField.value.trim().length > 0;
+        submitBtn.disabled = !(isDecisionSelected && hasNotes);
+    }
+
+    form.addEventListener('change', validateForm);
+    notesField.addEventListener('input', validateForm);
+
+    form.addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to submit this decision? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

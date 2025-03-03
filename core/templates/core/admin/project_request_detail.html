@@ -1,0 +1,98 @@
+{% extends 'core/admin/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:admin_project_requests' %}">Project Requests</a></li>
+            <li class="breadcrumb-item active">Request Details</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="card-title mb-0">Project Request Details</h2>
+                        <span class="badge {% if request.status == 'NEW' %}bg-primary
+                                         {% elif request.status == 'IN_REVIEW' %}bg-info
+                                         {% elif request.status == 'CONTACTED' %}bg-warning
+                                         {% elif request.status == 'ACCEPTED' %}bg-success
+                                         {% else %}bg-danger{% endif %} fs-6">
+                            {{ request.get_status_display }}
+                        </span>
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">Name</dt>
+                        <dd class="col-sm-9">{{ request.name }}</dd>
+
+                        <dt class="col-sm-3">Email</dt>
+                        <dd class="col-sm-9">
+                            <a href="mailto:{{ request.email }}">{{ request.email }}</a>
+                        </dd>
+
+                        <dt class="col-sm-3">Phone</dt>
+                        <dd class="col-sm-9">
+                            <a href="tel:{{ request.phone }}">{{ request.phone }}</a>
+                        </dd>
+
+                        <dt class="col-sm-3">Project Type</dt>
+                        <dd class="col-sm-9">{{ request.get_project_type_display }}</dd>
+
+                        <dt class="col-sm-3">Submitted</dt>
+                        <dd class="col-sm-9">{{ request.created_at|date:"M d, Y H:i" }}</dd>
+
+                        <dt class="col-sm-3">Project Details</dt>
+                        <dd class="col-sm-9">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    {{ request.message|linebreaks }}
+                                </div>
+                            </div>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Update Status</h3>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                {% for status_code, status_label in statuses %}
+                                <option value="{{ status_code }}" {% if request.status == status_code %}selected{% endif %}>
+                                    {{ status_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="admin_notes" class="form-label">Admin Notes</label>
+                            <textarea class="form-control" id="admin_notes" name="admin_notes" rows="5">{{ request.admin_notes }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Update Request</button>
+                    </form>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <a href="mailto:{{ request.email }}" class="btn btn-outline-primary">
+                            <i class="bi bi-envelope me-2"></i>Send Email
+                        </a>
+                        <a href="tel:{{ request.phone }}" class="btn btn-outline-primary">
+                            <i class="bi bi-telephone me-2"></i>Call Client
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

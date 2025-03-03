@@ -1,0 +1,149 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load core_extras %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Revenue Dashboard</h1>
+    
+    <!-- Revenue Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2 class="card-text">₦{{ total_revenue|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Revenue</h5>
+                    <h2 class="card-text">₦{{ monthly_revenue|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-dark">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Pending Distributions</h5>
+                    <h2 class="card-text text-dark">₦{{ pending_distributions|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Active Apps</h5>
+                    <h2 class="card-text">{{ active_apps_count }}</h2>
+                    <small>Generating Revenue</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Apps Revenue List -->
+    <div class="card bg-dark text-white">
+        <div class="card-header d-flex justify-content-between align-items-center bg-dark border-secondary">
+            <h5 class="mb-0">Your Apps Revenue</h5>
+            <div class="btn-group">
+                <button class="btn btn-outline-light btn-sm" onclick="exportRevenueData()">
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>App Name</th>
+                            <th>Status</th>
+                            <th>Total Revenue</th>
+                            <th>Net Revenue</th>
+                            <th>Monthly Revenue</th>
+                            <th>Last Distribution</th>
+                            <th>Pending</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in apps %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'core:app_detail' app.id %}" class="text-decoration-none text-white">
+                                    {{ app.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge {% if app.status == 'ACTIVE' %}bg-success
+                                                  {% elif app.status == 'PENDING' %}bg-warning text-dark
+                                                  {% else %}bg-secondary{% endif %}">
+                                    {{ app.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-white">₦{{ app.total_revenue|floatformat:2|intcomma }}</td>
+                            <td>
+                                <span class="text-success">₦{{ app.total_revenue|floatformat:2|intcomma }}</span>
+                            </td>
+                            <td class="text-white">₦{{ app.monthly_revenue|floatformat:2|intcomma }}</td>
+                            <td class="text-white">
+                                {% if app.last_distribution %}
+                                    {{ app.last_distribution.created_at|date:"M d, Y" }}
+                                    <small class="d-block text-light">₦{{ app.last_distribution.amount|floatformat:2|intcomma }}</small>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.pending_distributions > 0 %}
+                                    <span class="text-white">₦{{ app.pending_distributions|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'core:revenue_detail' app.id %}" 
+                                       class="btn btn-sm btn-outline-light">
+                                        <i class="fas fa-chart-bar"></i> Details
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <div class="alert alert-dark mb-0">
+                                    No apps found. <a href="{% url 'core:app_create' %}" class="text-info">Create your first app</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function exportRevenueData() {
+    // TODO: Implement revenue data export
+    alert('Export functionality coming soon!');
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

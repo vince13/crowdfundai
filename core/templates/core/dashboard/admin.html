@@ -1,0 +1,99 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<style>
+.card-body {
+    color: #fff !important;
+}
+.card-title, .card-text, h1, h2, h3, h4, h5, h6, p, span:not(.badge), .list-group-item {
+    color: #fff !important;
+}
+.text-muted {
+    color: #adb5bd !important;
+}
+.no-data-message {
+    color: #fff !important;
+}
+/* Statistics Display */
+.d-flex.justify-content-between span,
+.d-flex.justify-content-between span:not(.badge),
+.card-body .d-flex span,
+.stats-item span,
+.stat-label,
+.statistics-label {
+    color: #fff !important;
+}
+.d-flex.justify-content-between strong,
+.card-body .d-flex strong,
+.stats-value,
+.stat-value {
+    color: #fff !important;
+    font-weight: 600;
+}
+/* Force white text for specific statistics labels */
+.card-body span:contains("Total Users"),
+.card-body span:contains("Developers"),
+.card-body span:contains("Investors"),
+.card-body span:contains("Total Apps"),
+.card-body span:contains("Pending Review"),
+.card-body span:contains("Active"),
+.card-body span:contains("Funded"),
+.card-body span:contains("Total Investments"),
+.card-body span:contains("Total in Escrow"),
+.card-body span:contains("Pending Release"),
+.card-body span:contains("Total Pending Amount"),
+.card-body span:contains("Total Platform Fees"),
+.card-body span:contains("Pending Collection") {
+    color: #fff !important;
+}
+/* Statistics Labels */
+.stats-label, 
+.card-body strong,
+.card-body .stat-label,
+.card-body .label {
+    color: #fff !important;
+}
+/* Additional Dark Mode Text Fixes */
+.table td, 
+.table th,
+.metric h6,
+.metric h3,
+.list-group-item-action,
+.list-group-item a,
+small:not(.text-muted),
+.card a:not(.btn),
+.form-label,
+.input-group-text,
+.chart-label {
+    color: #fff !important;
+}
+/* Preserve certain elements */
+.btn:not(.btn-link) {
+    color: inherit !important;
+}
+.badge {
+    color: inherit !important;
+}
+</style>
+<div class="col-md-6 mb-4">
+    <div class="card h-100">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-certificate"></i> Investment Certificates
+            </h5>
+            <p class="card-text">Manage and verify investment certificates.</p>
+            <div class="list-group">
+                <a href="{% url 'core:certificate_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-list"></i> View All Certificates
+                </a>
+                <a href="{% url 'core:verify_payment_account' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-check-circle"></i> Verify Payment Accounts
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

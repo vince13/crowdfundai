@@ -1,0 +1,234 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load chart_tags %}
+{% load core_extras %}
+{% load currency_tags %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/search.css' %}">
+<style>
+    .app-image {
+        height: 160px;
+        object-fit: cover;
+    }
+    
+    .card {
+        transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        transition: width 0.6s ease;
+    }
+    
+    .funding-info {
+        padding: 10px;
+        background-color: rgba(0,0,0,0.02);
+        border-radius: 4px;
+    }
+    
+    .card-title a {
+        color: #2c3e50;
+    }
+    
+    .card-title a:hover {
+        color: #3498db;
+    }
+    
+    .badge {
+        padding: 6px 10px;
+        font-weight: 500;
+    }
+    
+    .badge.bg-info {
+        background-color: #17a2b8 !important;
+        color: white;
+    }
+    
+    .badge.bg-primary {
+        background-color: #0d6efd !important;
+    }
+    
+    .me-1 {
+        margin-right: 0.25rem !important;
+    }
+
+    .badge.bg-community {
+        background-color: #6f42c1 !important;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Search Header -->
+    <div class="search-header mb-4">
+        <form class="search-form" method="get" action="{% url 'core:search_apps' %}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control" 
+                               name="q" 
+                               value="{{ query }}"
+                               placeholder="Search AI apps..."
+                               autocomplete="off"
+                               hx-get="{% url 'core:search_suggestions' %}"
+                               hx-trigger="keyup changed delay:500ms"
+                               hx-target="#search-suggestions">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <div id="search-suggestions" class="search-suggestions"></div>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.0 }}" 
+                                    {% if filters.category == category.0 %}selected{% endif %}>
+                                {{ category.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <select class="form-select" name="sort">
+                        <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>
+                            Most Relevant
+                        </option>
+                        <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>
+                            Newest First
+                        </option>
+                        <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>
+                            Most Popular
+                        </option>
+                        <option value="funding" {% if sort_by == 'funding' %}selected{% endif %}>
+                            Most Funded
+                        </option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Advanced Filters -->
+            <div class="collapse" id="advancedFilters">
+                <div class="card card-body mt-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Price Range</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" name="min_price" 
+                                       placeholder="Min" value="{{ filters.price_range.0|default:''|floatformat:2 }}">
+                                <span class="input-group-text">to</span>
+                                <span class="input-group-text">₦</span>
+                                <input type="number" class="form-control" name="max_price" 
+                                       placeholder="Max" value="{{ filters.price_range.1|default:''|floatformat:2 }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="">Any Status</option>
+                                {% for status in app_statuses %}
+                                    <option value="{{ status.0 }}" 
+                                            {% if filters.status == status.0 %}selected{% endif %}>
+                                        {{ status.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="listing_type">
+                                <option value="">All Types</option>
+                                <option value="REGULAR" {% if filters.listing_type == 'REGULAR' %}selected{% endif %}>Regular</option>
+                                <option value="NOMINATED" {% if filters.listing_type == 'NOMINATED' %}selected{% endif %}>Community Nominated</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mt-2">
+                <button class="btn btn-link btn-sm" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#advancedFilters">
+                    Advanced Filters
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Search Results -->
+    <div class="search-results">
+        {% if total_results > 0 %}
+            <p class="text-muted">
+                Found {{ total_results }} result{{ total_results|pluralize }} 
+                {% if query %}for "{{ query }}"{% endif %}
+                {% if app.listing_type == 'NOMINATED' %}
+                    <span class="badge bg-community ms-2">
+                        <i class="fas fa-users"></i> Community
+                    </span>
+                {% endif %}
+            </p>
+            
+            <div class="row" id="results-container">
+                {% include 'core/search/results_partial.html' %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+                <nav aria-label="Search results pages">
+                    <ul class="pagination justify-content-center">
+                        {% if has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ current_page|add:'-1' }}&q={{ query }}">&laquo;</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for p in total_pages|get_range %}
+                            <li class="page-item {% if p == current_page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ p }}&q={{ query }}">{{ p }}</a>
+                            </li>
+                        {% endfor %}
+                        
+                        {% if has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ current_page|add:'1' }}&q={{ query }}">&raquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <h3>No results found</h3>
+                <p class="text-muted">
+                    Try adjusting your search or filters to find what you're looking for.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/search.js' %}"></script>
+{% endblock %} 

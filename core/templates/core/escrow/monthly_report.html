@@ -1,0 +1,225 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="monthly-report container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Monthly Report - {{ app.name }}</h1>
+        <div>
+            <a href="{% url 'core:escrow-reports-list' %}" class="btn btn-secondary">Back to Reports</a>
+            <a href="{% url 'core:escrow-reports-transaction-history' app.id %}" class="btn btn-primary">View Transactions</a>
+        </div>
+    </div>
+
+    <!-- Period Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="form-select">
+                        {% for year in "2023"|rjust:"4" %}
+                            <option value="{{ year }}" {% if report.period.year == year|add:"0" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="form-select">
+                        {% for month in "123456789101112"|slice:":12" %}
+                            <option value="{{ month }}" {% if report.period.month == month|add:"0" %}selected{% endif %}>
+                                {{ month|date:"F" }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Update Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transaction Summary -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Transaction Summary</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="summary-item">
+                        <h6>Deposits</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Count:</span>
+                            <strong>{{ report.transaction_summary.deposits.count }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <strong>₦{{ report.transaction_summary.deposits.total|default:"0.00" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-item">
+                        <h6>Releases</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Count:</span>
+                            <strong>{{ report.transaction_summary.releases.count }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <strong>₦{{ report.transaction_summary.releases.total|default:"0.00" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-item">
+                        <h6>Refunds</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Count:</span>
+                            <strong>{{ report.transaction_summary.refunds.count }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Total:</span>
+                            <strong>₦{{ report.transaction_summary.refunds.total|default:"0.00" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Milestone Summary -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Milestone Summary</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Release %</th>
+                            <th>Released Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for milestone in report.milestone_summary %}
+                        <tr>
+                            <td>{{ milestone.title }}</td>
+                            <td>
+                                <span class="badge {% if milestone.status == 'COMPLETED' %}bg-success{% elif milestone.status == 'IN_PROGRESS' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ milestone.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ milestone.progress }}%">
+                                        {{ milestone.progress }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ milestone.release_percentage }}%</td>
+                            <td>₦{{ milestone.total_released|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispute Summary -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Dispute Summary</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="summary-item">
+                        <h6>New Disputes</h6>
+                        <strong>{{ report.dispute_summary.new_disputes }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-item">
+                        <h6>Resolved Disputes</h6>
+                        <strong>{{ report.dispute_summary.resolved_disputes }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-item">
+                        <h6>Total Disputed Amount</h6>
+                        <strong>₦{{ report.dispute_summary.total_disputed_amount|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ending Balance -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">End of Period Balance</h5>
+            <div class="text-center">
+                <h3>₦{{ report.ending_balance|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.monthly-report .card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.monthly-report .card-title {
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.summary-item {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.summary-item h6 {
+    color: #333;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.progress {
+    height: 20px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    line-height: 20px;
+    font-size: 12px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.badge {
+    padding: 6px 10px;
+}
+
+.btn {
+    margin-left: 10px;
+}
+</style>
+{% endblock %} 

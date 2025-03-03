@@ -1,0 +1,153 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}App Analytics - {{ app.name }}{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1>Analytics for {{ app.name }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:admin_manage_metrics' app.pk %}" class="btn btn-sm btn-outline-primary me-2">
+            <i class="bi bi-gear"></i> Manage Metrics
+        </a>
+        <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-eye"></i> View App
+        </a>
+    </div>
+</div>
+
+<!-- Basic Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Views</h6>
+                <h2 class="card-title mb-0">{{ analytics.basic_metrics.total_views }}</h2>
+                <small class="text-{% if analytics.growth_rates.views.monthly > 0 %}success{% else %}danger{% endif %}">
+                    {{ analytics.growth_rates.views.monthly|floatformat:1 }}% this month
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Likes</h6>
+                <h2 class="card-title mb-0">{{ analytics.basic_metrics.total_likes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Upvotes</h6>
+                <h2 class="card-title mb-0">{{ analytics.basic_metrics.total_upvotes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Comments</h6>
+                <h2 class="card-title mb-0">{{ analytics.basic_metrics.total_comments }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Investment Metrics -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Funding Progress</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>{{ analytics.funding_progress.raised|floatformat:2 }} raised</span>
+                        <span>Goal: {{ analytics.funding_progress.goal|floatformat:2 }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ analytics.funding_progress.percentage|floatformat:1 }}%"
+                             aria-valuenow="{{ analytics.funding_progress.percentage|floatformat:1 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ analytics.funding_progress.percentage|floatformat:1 }}%
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Total Invested</small>
+                        <h4>{{ analytics.investment_metrics.total_invested|floatformat:2 }}</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Total Investors</small>
+                        <h4>{{ analytics.investment_metrics.total_investors }}</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Average Investment</small>
+                        <h4>{{ analytics.investment_metrics.avg_investment|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Growth Rates</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Monthly View Growth</small>
+                    <h4 class="text-{% if analytics.growth_rates.views.monthly > 0 %}success{% else %}danger{% endif %}">
+                        {{ analytics.growth_rates.views.monthly|floatformat:1 }}%
+                    </h4>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Weekly View Growth</small>
+                    <h4 class="text-{% if analytics.growth_rates.views.weekly > 0 %}success{% else %}danger{% endif %}">
+                        {{ analytics.growth_rates.views.weekly|floatformat:1 }}%
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Investment Trends -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Investment Trends (Last 30 Days)</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Number of Investments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trend in analytics.trends %}
+                        <tr>
+                            <td>{{ trend.date }}</td>
+                            <td>{{ trend.amount|floatformat:2 }}</td>
+                            <td>{{ trend.count }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">No investment data available for the last 30 days.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %} 

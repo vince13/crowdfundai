@@ -1,0 +1,344 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .small-chart {
+        height: 100px;
+    }
+    .alert-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        padding: 5px 10px;
+        border-radius: 50%;
+        background: #dc3545;
+        color: white;
+        font-size: 12px;
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>System Monitoring Dashboard</h2>
+        <div class="d-flex align-items-center">
+            <div class="text-muted me-3">Last updated: {{ system_metrics.timestamp|date:"H:i:s" }}</div>
+            <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#thresholdsModal">
+                <i class="bi bi-gear-fill"></i> Configure Alerts
+            </button>
+            <a href="{% url 'core:export_metrics' %}" class="btn btn-success">
+                <i class="bi bi-download"></i> Export Metrics
+            </a>
+        </div>
+    </div>
+    
+    {% if alerts %}
+    <!-- Alerts Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Active Alerts ({{ alerts|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for alert in alerts %}
+                        <div class="col-md-4 mb-3">
+                            <div class="alert alert-{{ alert.level }} mb-0">
+                                <h6 class="alert-heading">{{ alert.metric }}</h6>
+                                <p class="mb-0">
+                                    {{ alert.message }}<br>
+                                    Current: {{ alert.value }} (Threshold: {{ alert.threshold }})
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- System Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">CPU Usage</h5>
+                    <div class="display-4">{{ system_metrics.cpu_usage }}%</div>
+                    <div class="text-muted">
+                        Cores: {{ system_metrics.cpu_count }}<br>
+                        Load: {{ system_metrics.load_avg.0|floatformat:2 }}, 
+                              {{ system_metrics.load_avg.1|floatformat:2 }}, 
+                              {{ system_metrics.load_avg.2|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Memory Usage</h5>
+                    <div class="display-4">{{ system_metrics.memory_usage }}%</div>
+                    <div class="text-muted">
+                        Available: {{ system_metrics.memory_available|filesizeformat }}<br>
+                        Total: {{ system_metrics.memory_total|filesizeformat }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Disk Usage</h5>
+                    <div class="display-4">{{ system_metrics.disk_usage }}%</div>
+                    <div class="text-muted">
+                        Free: {{ system_metrics.disk_free|filesizeformat }}<br>
+                        Total: {{ system_metrics.disk_total|filesizeformat }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Network I/O</h5>
+                    <div class="text-muted">
+                        Sent: {{ system_metrics.bytes_sent|filesizeformat }}<br>
+                        Received: {{ system_metrics.bytes_recv|filesizeformat }}<br>
+                        Packets: {{ system_metrics.packets_sent|intcomma }} / {{ system_metrics.packets_recv|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Process Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Process CPU</h5>
+                    <div class="display-4">{{ system_metrics.process_cpu|floatformat:1 }}%</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Process Memory</h5>
+                    <div class="display-4">{{ system_metrics.process_memory|floatformat:1 }}%</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Threads</h5>
+                    <div class="display-4">{{ system_metrics.process_threads }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Connections</h5>
+                    <div class="display-4">{{ system_metrics.process_connections }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Database Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Database Size</h5>
+                    <div class="display-4">{{ db_metrics.database_size|filesizeformat }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Connections</h5>
+                    <div class="display-4">{{ db_metrics.active_connections }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Table Statistics</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Table</th>
+                                    <th>Rows</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in db_metrics.table_stats|slice:":5" %}
+                                <tr>
+                                    <td>{{ stat.table }}</td>
+                                    <td>{{ stat.rows|intcomma }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Response Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Response Times</h5>
+                    <div class="text-muted">
+                        Avg: {{ response_metrics.avg_response_time|floatformat:3 }}s<br>
+                        Max: {{ response_metrics.max_response_time|floatformat:3 }}s<br>
+                        Min: {{ response_metrics.min_response_time|floatformat:3 }}s
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Error Rate</h5>
+                    <div class="display-4">{{ error_metrics.error_rate|floatformat:2 }}%</div>
+                    <div class="text-muted">
+                        Errors: {{ error_metrics.error_count }}<br>
+                        Requests: {{ error_metrics.request_count|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h5 class="card-title">Error Types</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type, count in error_metrics.error_types.items %}
+                                <tr>
+                                    <td>{{ type }}</td>
+                                    <td>{{ count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thresholds Modal -->
+<div class="modal fade" id="thresholdsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure Alert Thresholds</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="thresholdsForm">
+                    <div class="mb-3">
+                        <label class="form-label">CPU Usage Threshold (%)</label>
+                        <input type="number" class="form-control" name="cpu_usage" 
+                               value="{{ thresholds.cpu_usage }}" min="0" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Memory Usage Threshold (%)</label>
+                        <input type="number" class="form-control" name="memory_usage"
+                               value="{{ thresholds.memory_usage }}" min="0" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Disk Usage Threshold (%)</label>
+                        <input type="number" class="form-control" name="disk_usage"
+                               value="{{ thresholds.disk_usage }}" min="0" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Error Rate Threshold (%)</label>
+                        <input type="number" class="form-control" name="error_rate"
+                               value="{{ thresholds.error_rate }}" min="0" max="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Response Time Threshold (seconds)</label>
+                        <input type="number" class="form-control" name="response_time"
+                               value="{{ thresholds.response_time }}" min="0" step="0.1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="updateThresholds()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+function updateThresholds() {
+    const form = document.getElementById('thresholdsForm');
+    const formData = new FormData(form);
+    const thresholds = {};
+    
+    for (let [key, value] of formData.entries()) {
+        thresholds[key] = parseFloat(value);
+    }
+    
+    fetch('{% url "core:update_thresholds" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(thresholds)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.reload();
+        } else {
+            alert('Error updating thresholds: ' + data.message);
+        }
+    });
+}
+
+// Auto-refresh
+setTimeout(function() {
+    window.location.reload();
+}, 30000);  // Refresh every 30 seconds
+</script>
+{% endblock extra_js %} 

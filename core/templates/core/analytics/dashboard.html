@@ -1,0 +1,184 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load chart_tags %}
+{% load humanize %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .progress {
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+    }
+    .progress-bar {
+        background-color: #0d6efd;
+        transition: width 0.6s ease;
+    }
+    .progress-bar.bg-success {
+        background-color: #198754;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Analytics Dashboard</h1>
+    
+    <!-- Investment Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Invested</h5>
+                    <h2 class="card-text">₦{{ investment_trends.total_invested|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Average Investment</h5>
+                    <h2 class="card-text">₦{{ investment_trends.average_investment|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2 class="card-text">₦{{ total_revenue|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Investment Trends Chart -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Investment Trends</h5>
+            <canvas id="investmentTrendsChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Portfolio Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Portfolio by Category</h5>
+                    <canvas id="categoryDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Investment Trend</h5>
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Performing Apps -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Top Performing Apps</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>App Name</th>
+                            <th>Category</th>
+                            <th>Total Investment</th>
+                            <th>Investors</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in app_performance.top_performing_apps %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'core:app_detail' app.id %}">{{ app.name }}</a>
+                            </td>
+                            <td>{{ app.get_category_display }}</td>
+                            <td>₦{{ app.total_investment|floatformat:2|intcomma }}</td>
+                            <td>{{ app.investor_count }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar {% if app.get_funding_progress >= 50 %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ app.get_funding_progress|floatformat:2 }}%"
+                                         aria-valuenow="{{ app.get_funding_progress|floatformat:2 }}"
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ app.get_funding_progress|floatformat:1 }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Investment Trends Chart
+    const trendsCtx = document.getElementById('investmentTrendsChart').getContext('2d');
+    new Chart(trendsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ investment_trends.dates|safe }},
+            datasets: [{
+                label: 'Daily Investments (₦)',
+                data: {{ investment_trends.amounts|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += new Intl.NumberFormat('en-NG', {
+                                style: 'currency',
+                                currency: 'NGN'
+                            }).format(context.parsed.y);
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString('en-NG', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

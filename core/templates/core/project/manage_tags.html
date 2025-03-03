@@ -1,0 +1,67 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Manage Tags for {{ app.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Current Tags</label>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                {% for tag in app.tags.all %}
+                                    <div class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill p-2">
+                                        {{ tag.name }}
+                                        <button type="submit" name="remove_tag" value="{{ tag.id }}" class="btn-close ms-2" aria-label="Remove tag"></button>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-muted">No tags added yet</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_tag" class="form-label">Add New Tag</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="new_tag" name="new_tag" placeholder="Enter tag name">
+                                <button type="submit" name="action" value="add_tag" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Add Tag
+                                </button>
+                            </div>
+                            <div class="form-text">Tags help investors find your app. Add relevant keywords that describe your app's features and technology.</div>
+                        </div>
+
+                        {% if suggested_tags %}
+                        <div class="mb-3">
+                            <label class="form-label">Suggested Tags</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for tag in suggested_tags %}
+                                    <button type="submit" name="add_suggested_tag" value="{{ tag }}" class="btn btn-outline-primary btn-sm rounded-pill">
+                                        <i class="bi bi-plus-lg"></i> {{ tag }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </form>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Adding relevant tags will help your app appear in search results and attract potential investors.
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'core:app_detail' app.id %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to App
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

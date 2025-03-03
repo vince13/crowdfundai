@@ -1,0 +1,73 @@
+/* Security Dashboard Styles */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table td, .table th {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+/* Statistics Cards */
+.card.bg-primary {
+    background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+}
+
+.card.bg-info {
+    background: linear-gradient(45deg, #36b9cc 0%, #258391 100%);
+}
+
+.card.bg-warning {
+    background: linear-gradient(45deg, #f6c23e 0%, #dda20a 100%);
+}
+
+.card.bg-success {
+    background: linear-gradient(45deg, #1cc88a 0%, #13855c 100%);
+}
+
+/* Event Distribution */
+.event-chart {
+    height: 300px;
+}
+
+/* Recent Activity */
+.activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Status Badges */
+.badge.bg-success {
+    background-color: #1cc88a !important;
+}
+
+.badge.bg-danger {
+    background-color: #e74a3b !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table {
+        font-size: 0.875rem;
+    }
+} 

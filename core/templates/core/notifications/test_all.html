@@ -1,0 +1,101 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Test All Notification Components</h1>
+    
+    <div class="row g-4">
+        <!-- Email Notification Test -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Email Notification</h5>
+                    <p class="card-text">Test the email notification system</p>
+                    <button class="btn btn-primary test-notification" data-type="email">
+                        Send Test Email
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Push Notification Test -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Push Notification</h5>
+                    <p class="card-text">Test the push notification system</p>
+                    <button class="btn btn-primary test-notification" data-type="push">
+                        Send Test Push
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Digest Test -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Notification Digest</h5>
+                    <p class="card-text">Test the notification digest system</p>
+                    <button class="btn btn-primary test-notification" data-type="digest">
+                        Send Test Digest
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Display -->
+    <div class="mt-4">
+        <h3>System Status</h3>
+        <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Firebase Status
+                <span class="badge bg-success" id="firebase-status">Connected</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Celery Status
+                <span class="badge bg-success" id="celery-status">Running</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Redis Status
+                <span class="badge bg-success" id="redis-status">Connected</span>
+            </li>
+        </ul>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('.test-notification');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const type = this.dataset.type;
+            
+            fetch('/notifications/test-all/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `test_type=${type}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(`Test ${type} notification sent successfully!`);
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                alert(`Error sending notification: ${error}`);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,151 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}List Your App For Sale{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="h2 mb-4">List Your App For Sale</h1>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h4 class="alert-heading h5 mb-2">Important Notes</h4>
+                        <ul class="mb-0">
+                            <li>Provide accurate and detailed information about your app</li>
+                            <li>Include all relevant technical details and documentation</li>
+                            <li>Be transparent about revenue and user metrics</li>
+                            <li>Your listing will be reviewed before being made public</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Basic Information</h3>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.name|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.description|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.category|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.ai_features|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Details -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Technical Details</h3>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.tech_stack|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.deployment_type|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ form.github_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.demo_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.demo_video|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sale Information -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Sale Information</h3>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.sale_price|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.sale_includes_source_code|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.sale_includes_assets|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.sale_includes_support|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.support_duration_months|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Metrics -->
+                        <div class="mb-4">
+                            <h3 class="h5 mb-3">Performance Metrics</h3>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.monthly_revenue|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.monthly_users|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'core:apps_for_sale' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Create Listing
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/hide support duration based on support checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+        const supportCheckbox = document.getElementById('id_sale_includes_support');
+        const supportDurationField = document.getElementById('div_id_support_duration_months');
+        
+        function toggleSupportDuration() {
+            if (supportCheckbox.checked) {
+                supportDurationField.style.display = 'block';
+            } else {
+                supportDurationField.style.display = 'none';
+            }
+        }
+        
+        if (supportCheckbox) {
+            toggleSupportDuration();
+            supportCheckbox.addEventListener('change', toggleSupportDuration);
+        }
+    });
+</script>
+{% endblock %} 

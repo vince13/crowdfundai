@@ -1,0 +1,422 @@
+{% load crispy_forms_tags %}
+
+<form id="aiAssessmentForm" method="post" action="{% url 'core:ai_assessment' app.pk %}" class="needs-validation" novalidate>
+    {% csrf_token %}
+    
+    <!-- Progress bar -->
+    <div class="progress mb-4">
+        <div class="progress-bar" role="progressbar" style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100">
+            <span class="progress-text">Technical Assessment</span>
+        </div>
+    </div>
+    
+    <!-- Form sections -->
+    <div class="form-sections">
+        <!-- Technical Assessment -->
+        <section class="form-section active" data-section="1">
+            <h5 class="mb-4">Technical Assessment</h5>
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle"></i> This section evaluates your app's technical foundation and AI capabilities.
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Technology Stack</h6>
+                    {{ form.tech_stack_details|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> category: technology version
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">AI Features</h6>
+                    {{ form.ai_features_details|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> feature: algorithm details
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Development Progress</h6>
+                    {{ form.development_progress|crispy }}
+                    <div class="progress mt-3" id="developmentProgressBar">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="button" class="btn btn-primary next-section">
+                    Next <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+        
+        <!-- Market Assessment -->
+        <section class="form-section d-none" data-section="2">
+            <h5 class="mb-4">Market Assessment</h5>
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle"></i> Help us understand your market positioning and revenue strategy.
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Target Market</h6>
+                    {{ form.target_market|crispy }}
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Competitor Analysis</h6>
+                    {{ form.competitor_analysis|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> competitor: market_share, strengths, weaknesses
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Revenue Model</h6>
+                    {{ form.revenue_model|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> source: percentage
+                    </div>
+                    <div class="progress mt-3" id="revenueProgressBar">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="text-center small mt-2">
+                        Total: <span id="revenueTotalPercentage">0</span>% 
+                        <span id="revenueValidation" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="button" class="btn btn-secondary prev-section">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-primary next-section">
+                    Next <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+        
+        <!-- Team & Additional Information -->
+        <section class="form-section d-none" data-section="3">
+            <h5 class="mb-4">Team & Additional Information</h5>
+            <div class="alert alert-info small">
+                <i class="bi bi-info-circle"></i> Tell us about your team's experience and future plans.
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Team Experience</h6>
+                    {{ form.team_experience|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> role: years experience, expertise
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Previous Projects</h6>
+                    {{ form.previous_projects|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> project: users, revenue
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Growth & Innovation</h6>
+                    {{ form.scalability_plan|crispy }}
+                    {{ form.innovation_factors|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format for innovation:</strong> category: details
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Risk Assessment</h6>
+                    {{ form.risk_factors|crispy }}
+                    <div class="format-example small text-muted mt-2">
+                        <strong>Format:</strong> risk type: risk - mitigation
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="button" class="btn btn-secondary prev-section">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="submit" class="btn btn-success">
+                    Complete Assessment <i class="bi bi-check-circle"></i>
+                </button>
+            </div>
+        </section>
+    </div>
+</form>
+
+<style>
+    /* Add some spacing between form fields */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Style the help text */
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    /* Style the placeholders */
+    .form-control::placeholder {
+        color: #adb5bd;
+        font-size: 0.875rem;
+        font-style: italic;
+    }
+    
+    /* Style the section headers */
+    .form-section h6 {
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    /* Style the buttons */
+    .btn {
+        padding: 0.5rem 1.5rem;
+    }
+    
+    /* Add animation for section transitions */
+    .form-section {
+        transition: opacity 0.3s ease;
+    }
+    
+    .form-section.d-none {
+        opacity: 0;
+    }
+    
+    .form-section.active {
+        opacity: 1;
+    }
+
+    /* Style the progress bar */
+    .progress {
+        height: 1.5rem;
+    }
+
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Style the format examples */
+    .format-example {
+        padding: 0.5rem;
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+    }
+
+    /* Style the cards */
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .card-title {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    /* Style validation feedback */
+    .invalid-feedback {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .is-invalid {
+        border-color: #dc3545;
+    }
+
+    .is-invalid:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Development progress bar update
+    const progressSelect = document.querySelector('.progress-select');
+    const progressBar = document.querySelector('#developmentProgressBar .progress-bar');
+    
+    if (progressSelect) {
+        progressSelect.addEventListener('change', function() {
+            const progress = this.value;
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+        });
+    }
+
+    // Revenue model validation
+    const revenueInput = document.querySelector('.revenue-input');
+    const revenueProgressBar = document.querySelector('#revenueProgressBar .progress-bar');
+    const revenueTotalSpan = document.querySelector('#revenueTotalPercentage');
+    const revenueValidation = document.querySelector('#revenueValidation');
+    
+    if (revenueInput) {
+        revenueInput.addEventListener('input', function() {
+            let total = 0;
+            const lines = this.value.split('\n');
+            
+            lines.forEach(line => {
+                if (line.includes(':')) {
+                    const percentage = parseInt(line.split(':')[1].replace('%', '').trim());
+                    if (!isNaN(percentage)) {
+                        total += percentage;
+                    }
+                }
+            });
+            
+            revenueTotalSpan.textContent = total;
+            revenueProgressBar.style.width = Math.min(total, 100) + '%';
+            
+            if (total === 100) {
+                revenueProgressBar.classList.remove('bg-danger');
+                revenueProgressBar.classList.add('bg-success');
+                revenueValidation.textContent = '';
+            } else {
+                revenueProgressBar.classList.remove('bg-success');
+                revenueProgressBar.classList.add('bg-danger');
+                revenueValidation.textContent = '(Must equal 100%)';
+            }
+        });
+    }
+
+    // Form validation before section navigation
+    const validateSection = (section) => {
+        let isValid = true;
+        const inputs = section.querySelectorAll('input, textarea, select');
+        
+        inputs.forEach(input => {
+            if (input.required && !input.value.trim()) {
+                isValid = false;
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        return isValid;
+    };
+
+    // Section navigation with validation
+    document.querySelectorAll('.next-section').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const currentSection = this.closest('.form-section');
+            if (validateSection(currentSection)) {
+                const nextSection = currentSection.nextElementSibling;
+                currentSection.classList.add('d-none');
+                nextSection.classList.remove('d-none');
+                
+                // Update progress bar
+                const progress = ((parseInt(nextSection.dataset.section) / 3) * 100);
+                const progressBar = document.querySelector('.progress-bar');
+                progressBar.style.width = progress + '%';
+                progressBar.setAttribute('aria-valuenow', progress);
+                
+                // Update progress text
+                const progressText = nextSection.querySelector('h5').textContent;
+                document.querySelector('.progress-text').textContent = progressText;
+            }
+        });
+    });
+
+    document.querySelectorAll('.prev-section').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const currentSection = this.closest('.form-section');
+            const prevSection = currentSection.previousElementSibling;
+            currentSection.classList.add('d-none');
+            prevSection.classList.remove('d-none');
+            
+            // Update progress bar
+            const progress = ((parseInt(prevSection.dataset.section) / 3) * 100);
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+            
+            // Update progress text
+            const progressText = prevSection.querySelector('h5').textContent;
+            document.querySelector('.progress-text').textContent = progressText;
+        });
+    });
+
+    // Form submission
+    const form = document.getElementById('aiAssessmentForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const currentSection = document.querySelector('.form-section:not(.d-none)');
+        if (validateSection(currentSection)) {
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+            
+            // Submit form
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = data.redirect;
+                } else {
+                    // Show errors
+                    Object.entries(data.errors).forEach(([field, messages]) => {
+                        const input = this.querySelector(`[name="${field}"]`);
+                        if (input) {
+                            input.classList.add('is-invalid');
+                            const feedback = document.createElement('div');
+                            feedback.className = 'invalid-feedback';
+                            feedback.textContent = messages.join(' ');
+                            input.parentNode.appendChild(feedback);
+                        }
+                    });
+                    
+                    // Reset submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Reset submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+    });
+});
+</script> 

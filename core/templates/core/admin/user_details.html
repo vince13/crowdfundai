@@ -1,0 +1,271 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}User Details: {{ user_profile.username }}{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1>User Details: {{ user_profile.username }}</h1>
+    <div class="btn-toolbar">
+        <form method="post" class="me-2">
+            {% csrf_token %}
+            {% if user_profile.is_active %}
+                <button type="submit" name="action" value="deactivate" 
+                        class="btn btn-warning">Deactivate User</button>
+            {% else %}
+                <button type="submit" name="action" value="activate" 
+                        class="btn btn-success">Activate User</button>
+            {% endif %}
+        </form>
+        <a href="{% url 'core:admin_manage_users' %}" class="btn btn-outline-light">Back to Users</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Information -->
+    <div class="col-md-6">
+        <div class="card mb-4 bg-dark text-white">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="card-title mb-0">User Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Username</dt>
+                    <dd class="col-sm-8">{{ user_profile.username }}</dd>
+
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ user_profile.email }}</dd>
+
+                    <dt class="col-sm-4">Role</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{% if user_profile.role == 'DEVELOPER' %}info text-dark{% elif user_profile.role == 'INVESTOR' %}success{% else %}primary{% endif %}">
+                            {{ user_profile.get_role_display }}
+                        </span>
+                        <!-- Role Change Form -->
+                        <form method="post" class="mt-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_role">
+                            <div class="input-group">
+                                <select name="role" class="form-select form-select-sm bg-dark text-white">
+                                    {% for role_value, role_label in available_roles %}
+                                        <option value="{{ role_value }}" {% if user_profile.role == role_value %}selected{% endif %}>
+                                            {{ role_label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-light">
+                                    Change Role
+                                </button>
+                            </div>
+                        </form>
+                    </dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge {% if user_profile.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if user_profile.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Joined</dt>
+                    <dd class="col-sm-8">{{ user_profile.date_joined|date }}</dd>
+
+                    <dt class="col-sm-4">Last Login</dt>
+                    <dd class="col-sm-8">{{ user_profile.last_login|date|default:"Never" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        {% if user_profile.role == 'DEVELOPER' and user_profile.payment_info %}
+        <div class="card mb-4 bg-dark text-white">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Payment Account Information</h5>
+                <span class="badge {% if user_profile.payment_info.verification_status == 'verified' %}bg-success
+                      {% elif user_profile.payment_info.verification_status == 'rejected' %}bg-danger
+                      {% elif user_profile.payment_info.verification_status == 'under_review' %}bg-info
+                      {% else %}bg-warning{% endif %}">
+                    {{ user_profile.payment_info.get_verification_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Account Details -->
+                <div class="mb-4">
+                    <h6 class="mb-3">
+                        {% if user_profile.payment_info.payment_method == 'bank_transfer' %}
+                            Bank Account Details
+                        {% else %}
+                            Paystack Account Details
+                        {% endif %}
+                    </h6>
+                    <div class="card border-secondary bg-dark">
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Bank Name</dt>
+                                <dd class="col-sm-8">{{ user_profile.payment_info.account_details.bank_name }}</dd>
+
+                                <dt class="col-sm-4">Account Name</dt>
+                                <dd class="col-sm-8">{{ user_profile.payment_info.account_details.account_name }}</dd>
+
+                                <dt class="col-sm-4">Account Number</dt>
+                                <dd class="col-sm-8">{{ user_profile.payment_info.account_details.account_number }}</dd>
+
+                                {% if user_profile.payment_info.payment_method == 'paystack' %}
+                                    <dt class="col-sm-4">Email</dt>
+                                    <dd class="col-sm-8">{{ user_profile.payment_info.account_details.email }}</dd>
+
+                                    <dt class="col-sm-4">Recipient Code</dt>
+                                    <dd class="col-sm-8">{{ user_profile.payment_info.account_details.recipient_code }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Information -->
+                <div class="mb-4">
+                    <h6 class="mb-3">Verification Information</h6>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge {% if user_profile.payment_info.verification_status == 'verified' %}bg-success
+                                  {% elif user_profile.payment_info.verification_status == 'rejected' %}bg-danger
+                                  {% elif user_profile.payment_info.verification_status == 'under_review' %}bg-info
+                                  {% else %}bg-warning{% endif %}">
+                                {{ user_profile.payment_info.get_verification_status_display }}
+                            </span>
+                        </dd>
+
+                        {% if user_profile.payment_info.verification_status == 'verified' %}
+                            <dt class="col-sm-4">Verified By</dt>
+                            <dd class="col-sm-8">
+                                <div class="d-flex align-items-center">
+                                    {% if user_profile.payment_info.verified_by.profile_image %}
+                                        <img src="{{ user_profile.payment_info.verified_by.profile_image.url }}" 
+                                             alt="Admin" 
+                                             class="rounded-circle me-2" 
+                                             width="32" height="32">
+                                    {% else %}
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
+                                             style="width: 32px; height: 32px;">
+                                            {{ user_profile.payment_info.verified_by.get_full_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div>{{ user_profile.payment_info.verified_by.get_full_name }}</div>
+                                        <small class="text-muted">{{ user_profile.payment_info.verified_by.email }}</small>
+                                    </div>
+                                </div>
+                            </dd>
+
+                            <dt class="col-sm-4">Verified On</dt>
+                            <dd class="col-sm-8">
+                                <div>{{ user_profile.payment_info.verified_at|date:"M d, Y" }}</div>
+                                <small class="text-muted">{{ user_profile.payment_info.verified_at|date:"H:i" }}</small>
+                            </dd>
+                        {% endif %}
+
+                        {% if user_profile.payment_info.verification_status == 'rejected' %}
+                            <dt class="col-sm-4">Rejected By</dt>
+                            <dd class="col-sm-8">{{ user_profile.payment_info.rejected_by.get_full_name }}</dd>
+
+                            <dt class="col-sm-4">Rejected On</dt>
+                            <dd class="col-sm-8">{{ user_profile.payment_info.rejected_at|date:"M d, Y H:i" }}</dd>
+                        {% endif %}
+
+                        {% if user_profile.payment_info.verification_notes %}
+                            <dt class="col-sm-4">Notes</dt>
+                            <dd class="col-sm-8">{{ user_profile.payment_info.verification_notes }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-4">Submitted On</dt>
+                        <dd class="col-sm-8">{{ user_profile.payment_info.created_at|date:"M d, Y H:i" }}</dd>
+                    </dl>
+                </div>
+
+                <!-- Verification Documents -->
+                {% if user_profile.payment_info.payment_method == 'bank_transfer' %}
+                    <div>
+                        <h6 class="mb-3">Verification Documents</h6>
+                        {% if user_profile.payment_info.verification_documents.exists %}
+                            <div class="list-group">
+                                {% for doc in user_profile.payment_info.verification_documents.all %}
+                                    <div class="list-group-item bg-dark text-white border-secondary">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ doc.get_document_type_display }}</h6>
+                                                <small class="text-muted">
+                                                    Uploaded {{ doc.uploaded_at|date:"M d, Y H:i" }}
+                                                </small>
+                                            </div>
+                                            <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-outline-light">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                No verification documents uploaded yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- User Statistics -->
+    <div class="col-md-6">
+        <div class="card mb-4 bg-dark text-white">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="card-title mb-0">Activity Statistics</h5>
+            </div>
+            <div class="card-body">
+                {% if user_profile.role == 'DEVELOPER' %}
+                    <dl class="row">
+                        <dt class="col-sm-6">Apps Created</dt>
+                        <dd class="col-sm-6">{{ stats.apps_created }}</dd>
+                    </dl>
+                {% elif user_profile.role == 'INVESTOR' %}
+                    <dl class="row">
+                        <dt class="col-sm-6">Investments Made</dt>
+                        <dd class="col-sm-6">{{ stats.investments_made }}</dd>
+
+                        <dt class="col-sm-6">Total Invested</dt>
+                        <dd class="col-sm-6">{% if request.currency == 'NGN' %}₦{% else %}${% endif %}{{ stats.total_invested|floatformat:2 }}</dd>
+                    </dl>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user_profile.role == 'DEVELOPER' %}
+            <!-- Developer's Apps -->
+            <div class="card bg-dark text-white">
+                <div class="card-header bg-dark border-secondary">
+                    <h5 class="card-title mb-0">Apps</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for app in user_profile.applisting_set.all %}
+                            <a href="{% url 'core:app_detail' app.pk %}" 
+                               class="list-group-item list-group-item-action bg-dark text-white border-secondary">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ app.name }}</h6>
+                                    <span class="badge bg-{{ app.status|lower }}">
+                                        {{ app.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="mb-1">Funding: {% if request.currency == 'NGN' %}₦{% else %}${% endif %}{{ app.get_funded_amount|floatformat:2 }}</p>
+                            </a>
+                        {% empty %}
+                            <p class="text-muted mb-0">No apps created yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

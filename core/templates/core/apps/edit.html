@@ -1,0 +1,281 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load currency_tags %}
+
+{% block title %}Edit {{ app.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Edit App: {{ app.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Add debug output to verify form is being passed -->
+                    {% if form %}
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Basic Information -->
+                            <h4 class="mb-3">Basic Information</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.category|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <!-- Project Status -->
+                            <h4 class="mb-3 mt-4">Project Status</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.development_stage|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.project_status|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.progress|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.estimated_completion_date|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.description|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <!-- Technical Details -->
+                            <h4 class="mb-3 mt-4">Technical Details</h4>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.ai_features|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ form.github_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.demo_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.demo_video|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <!-- Funding Details -->
+                            <h4 class="mb-3 mt-4">Funding Details</h4>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ form.funding_goal|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.currency|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.funding_round|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-3">
+                                    {{ form.available_percentage|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.min_investment_percentage|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.equity_percentage|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.round_number|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ form.price_per_percentage|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.listing_type|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.lock_in_period|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    {{ form.funding_end_date|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <!-- Use of Funds -->
+                            <h4 class="mb-3 mt-4">Use of Funds</h4>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Development (%)</label>
+                                                    <input type="number" class="form-control" id="development_percent" min="0" max="100" step="1">
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Marketing (%)</label>
+                                                    <input type="number" class="form-control" id="marketing_percent" min="0" max="100" step="1">
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Operations (%)</label>
+                                                    <input type="number" class="form-control" id="operations_percent" min="0" max="100" step="1">
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Research (%)</label>
+                                                    <input type="number" class="form-control" id="research_percent" min="0" max="100" step="1">
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Legal (%)</label>
+                                                    <input type="number" class="form-control" id="legal_percent" min="0" max="100" step="1">
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Other (%)</label>
+                                                    <input type="number" class="form-control" id="other_percent" min="0" max="100" step="1">
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="progress mb-3">
+                                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" id="total_progress"></div>
+                                                    </div>
+                                                    <p class="text-center mb-0">Total: <span id="total_percentage">0</span>% <span id="total_validation" class="text-danger"></span></p>
+                                                </div>
+                                            </div>
+                                            {{ form.use_of_funds }}
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted mt-2">
+                                        <strong>Note:</strong> Total percentage must equal 100%. The values will be automatically formatted into JSON.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info mt-4">
+                                <strong>Important Notes:</strong>
+                                <ul class="mb-0">
+                                    <li>All changes will be reviewed before being made public</li>
+                                    <li>The funding goal must equal share price × total shares</li>
+                                    <li>Lock-in period must be at least 30 days</li>
+                                    <li>Use of funds must total 100%</li>
+                                </ul>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            Form not available. Debug info:
+                            <pre>{{ request.resolver_match.view_name }}</pre>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// Use of Funds handling
+document.addEventListener('DOMContentLoaded', function() {
+    const percentageInputs = [
+        'development_percent',
+        'marketing_percent',
+        'operations_percent',
+        'research_percent',
+        'legal_percent',
+        'other_percent'
+    ];
+    
+    const useOfFundsInput = document.querySelector('#{{ form.use_of_funds.id_for_label }}');
+    useOfFundsInput.style.display = 'none';  // Hide the original textarea
+    
+    // Try to parse existing values
+    try {
+        const existingValues = JSON.parse(useOfFundsInput.value || '{}');
+        if (existingValues.development) document.getElementById('development_percent').value = existingValues.development;
+        if (existingValues.marketing) document.getElementById('marketing_percent').value = existingValues.marketing;
+        if (existingValues.operations) document.getElementById('operations_percent').value = existingValues.operations;
+        if (existingValues.research) document.getElementById('research_percent').value = existingValues.research;
+        if (existingValues.legal) document.getElementById('legal_percent').value = existingValues.legal;
+        if (existingValues.other) document.getElementById('other_percent').value = existingValues.other;
+        updateTotal();
+    } catch (e) {
+        console.log('No existing values or invalid JSON');
+    }
+    
+    function updateTotal() {
+        let total = 0;
+        const values = {};
+        
+        percentageInputs.forEach(id => {
+            const input = document.getElementById(id);
+            const value = parseInt(input.value) || 0;
+            total += value;
+            values[id.replace('_percent', '')] = value;
+        });
+        
+        // Update progress bar and total
+        const progressBar = document.getElementById('total_progress');
+        const totalSpan = document.getElementById('total_percentage');
+        const validationSpan = document.getElementById('total_validation');
+        
+        progressBar.style.width = Math.min(total, 100) + '%';
+        progressBar.classList.toggle('bg-danger', total !== 100);
+        progressBar.classList.toggle('bg-success', total === 100);
+        
+        totalSpan.textContent = total;
+        validationSpan.textContent = total === 100 ? '' : '(Must equal 100%)';
+        
+        // Update hidden input
+        useOfFundsInput.value = JSON.stringify(values);
+    }
+    
+    // Add event listeners to all percentage inputs
+    percentageInputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updateTotal);
+    });
+});
+</script>
+{% endblock %} 

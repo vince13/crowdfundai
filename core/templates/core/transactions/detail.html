@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Transaction #{{ transaction.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Transaction Details</h5>
+                    <a href="{% url 'core:transaction_history' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Transactions
+                    </a>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Transaction ID:</dt>
+                        <dd class="col-sm-8 text-muted">#{{ transaction.id }}</dd>
+
+                        <dt class="col-sm-4 text-muted">App:</dt>
+                        <dd class="col-sm-8">
+                            <a href="{% url 'core:app_detail' transaction.app.id %}" class="text-decoration-none text-muted">
+                                {{ transaction.app.name }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Type:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{% if transaction.transaction_type == 'INVESTMENT' %}primary{% else %}success{% endif %}">
+                                {{ transaction.get_transaction_type_display }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Amount:</dt>
+                        <dd class="col-sm-8 text-muted">₦{{ transaction.amount|floatformat:2|intcomma }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Date:</dt>
+                        <dd class="col-sm-8 text-muted">{{ transaction.created_at|date:"F d, Y H:i" }}</dd>
+
+                        {% if transaction.description %}
+                        <dt class="col-sm-4 text-muted">Description:</dt>
+                        <dd class="col-sm-8 text-muted">{{ transaction.description }}</dd>
+                        {% endif %}
+
+                        {% if transaction.can_be_disputed %}
+                        <dt class="col-sm-4">Actions:</dt>
+                        <dd class="col-sm-8">
+                            <a href="{% url 'core:create_dispute' %}?transaction_id={{ transaction.id }}" 
+                               class="btn btn-sm btn-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Open Dispute
+                            </a>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

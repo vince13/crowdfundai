@@ -1,0 +1,180 @@
+{% extends "core/base.html" %}
+
+{% block title %}Manage Dispute #{{ dispute.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Manage Dispute #{{ dispute.id }}</h2>
+                <a href="{% url 'core:dispute_detail' dispute.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Details
+                </a>
+            </div>
+
+            <!-- Dispute Info -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 text-muted">Title:</dt>
+                        <dd class="col-sm-9 text-muted">{{ dispute.title }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Type:</dt>
+                        <dd class="col-sm-9 text-muted">{{ dispute.get_dispute_type_display }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge {% if dispute.status == 'PENDING' %}bg-secondary
+                                             {% elif dispute.status == 'IN_REVIEW' %}bg-info
+                                             {% elif dispute.status == 'RESOLVED' %}bg-success
+                                             {% elif dispute.status == 'CLOSED' %}bg-secondary
+                                             {% elif dispute.status == 'ESCALATED' %}bg-danger{% endif %}">
+                                {{ dispute.get_status_display }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-3 text-muted">Raised By:</dt>
+                        <dd class="col-sm-9 text-muted">{{ dispute.raised_by.get_full_name|default:dispute.raised_by.username }}</dd>
+
+                        <dt class="col-sm-3 text-muted">Created:</dt>
+                        <dd class="col-sm-9 text-muted">{{ dispute.created_at|date:"M d, Y H:i" }}</dd>
+
+                        {% if dispute.assigned_to %}
+                        <dt class="col-sm-3 text-muted">Assigned To:</dt>
+                        <dd class="col-sm-9 text-muted">{{ dispute.assigned_to.get_full_name|default:dispute.assigned_to.username }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-3 text-muted">App:</dt>
+                        <dd class="col-sm-9">
+                            <a href="{% url 'core:app_detail' dispute.transaction.app.id %}" class="text-decoration-none text-muted">
+                                {{ dispute.transaction.app.name }}
+                            </a>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Action Forms -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if is_staff %}
+                        <!-- Staff Actions -->
+                        {% if dispute.status == 'PENDING' %}
+                        <form method="post" class="mb-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="assign">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-check"></i> Assign to Me
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if dispute.status == 'IN_REVIEW' %}
+                        <form method="post" class="mb-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="escalate">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Escalate Dispute
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if dispute.status == 'RESOLVED' %}
+                        <form method="post" class="mb-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="close">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-lock"></i> Close Dispute
+                            </button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if dispute.status == 'IN_REVIEW' or dispute.status == 'ESCALATED' %}
+                    <!-- Resolution Form (Available to both staff and developers) -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="resolve">
+                        <div class="mb-3">
+                            <label for="resolution" class="form-label">Resolution Details</label>
+                            <textarea name="resolution" id="resolution" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resolution_type" class="form-label">Resolution Type</label>
+                            <select name="resolution_type" id="resolution_type" class="form-select" required>
+                                <option value="">Select Resolution Type</option>
+                                <option value="REFUND">Refund Issued</option>
+                                <option value="COMPENSATION">Compensation Provided</option>
+                                <option value="CLARIFICATION">Issue Clarified</option>
+                                <option value="NO_ACTION">No Action Required</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Resolve Dispute
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Evidence Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Evidence</h5>
+                </div>
+                <div class="card-body">
+                    {% if evidence %}
+                        <ul class="list-unstyled mb-0">
+                        {% for item in evidence %}
+                            <li class="mb-2">
+                                <a href="{{ item.file.url }}" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-file"></i> {{ item.title }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">No evidence uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Comments -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Comments</h5>
+                </div>
+                <div class="card-body">
+                    {% if comments %}
+                        <div class="comments-list">
+                        {% for comment in comments|slice:":5" %}
+                            <div class="comment mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">
+                                        {{ comment.author.get_full_name|default:comment.author.username }}
+                                    </small>
+                                    <small class="text-muted">
+                                        {{ comment.created_at|date:"M d, Y H:i" }}
+                                    </small>
+                                </div>
+                                <p class="mb-0">{{ comment.content }}</p>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No comments yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

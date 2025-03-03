@@ -1,0 +1,794 @@
+{% extends 'core/admin/base.html' %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <h2 class="mb-4">Subscription Management</h2>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="subscriptionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans" type="button" role="tab">
+                Subscription Plans
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                User Subscriptions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="usage-tab" data-bs-toggle="tab" data-bs-target="#usage" type="button" role="tab">
+                Usage Tracking
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+                Advanced Analytics
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="recovery-tab" data-bs-toggle="tab" data-bs-target="#recovery" type="button" role="tab">
+                Recovery Management
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="accounting-tab" data-bs-toggle="tab" data-bs-target="#accounting" type="button" role="tab">
+                Accounting
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="subscriptionTabsContent">
+        <!-- Subscription Plans Tab -->
+        <div class="tab-pane fade show active" id="plans" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Active Plans</h3>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPlanModal">
+                    <i class="bi bi-plus"></i> New Plan
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Tier</th>
+                            <th>Price</th>
+                            <th>Active</th>
+                            <th>Features</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in subscription_plans %}
+                        <tr>
+                            <td>{{ plan.name }}</td>
+                            <td>{{ plan.get_tier_display }}</td>
+                            <td>₦{{ plan.price }}</td>
+                            <td>
+                                {% if plan.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#featuresModal{{ plan.id }}">
+                                    View Features
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editPlanModal{{ plan.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deletePlanModal{{ plan.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- User Subscriptions Tab -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+            <div class="mb-4">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="userSearch" placeholder="Search by email or username...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="tierFilter">
+                            <option value="">All Tiers</option>
+                            <option value="FREE">Free</option>
+                            <option value="DEVELOPER_PRO">Developer Pro</option>
+                            <option value="INVESTOR_PRO">Investor Pro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Current Plan</th>
+                            <th>Status</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Auto Renew</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscription in user_subscriptions %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'core:admin_user_details' subscription.user.id %}">
+                                    {{ subscription.user.email }}
+                                </a>
+                            </td>
+                            <td>{{ subscription.get_tier_display }}</td>
+                            <td>
+                                {% if subscription.is_active %}
+                                    {% if subscription.end_date and not subscription.auto_renew %}
+                                    <span class="badge bg-warning">Cancels on {{ subscription.end_date|date }}</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ subscription.start_date|date }}</td>
+                            <td>{{ subscription.end_date|date|default:"-" }}</td>
+                            <td>
+                                {% if subscription.auto_renew %}
+                                <span class="badge bg-info">Yes</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editSubscriptionModal{{ subscription.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% if subscription.is_active %}
+                                <button class="btn btn-sm btn-warning" onclick="cancelSubscription({{ subscription.id }})">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Usage Tracking Tab -->
+        <div class="tab-pane fade" id="usage" role="tabpanel">
+            <!-- Analytics Overview -->
+            <div class="row mb-4">
+                {% for feature, stats in analytics.items %}
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">{{ feature|title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <small class="text-muted">Daily Usage</small>
+                                <h3 class="mb-0">{{ stats.total_daily_usage }}</h3>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Monthly Usage</small>
+                                <h3 class="mb-0">{{ stats.total_monthly_usage }}</h3>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-warning">Near Limit</small>
+                                    <h5 class="mb-0">{{ stats.users_near_limit }}</h5>
+                                </div>
+                                <div>
+                                    <small class="text-danger">At Limit</small>
+                                    <h5 class="mb-0">{{ stats.users_at_limit }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Usage Records Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Usage Records</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Feature</th>
+                                    <th>Daily Usage</th>
+                                    <th>Monthly Usage</th>
+                                    <th>Daily Limit</th>
+                                    <th>Monthly Limit</th>
+                                    <th>Status</th>
+                                    <th>Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in usage_records %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'core:admin_user_details' record.subscription.user.id %}">
+                                            {{ record.subscription.user.email }}
+                                        </a>
+                                    </td>
+                                    <td>{{ record.feature_name }}</td>
+                                    <td>{{ record.daily_usage }}</td>
+                                    <td>{{ record.monthly_usage }}</td>
+                                    <td>{{ record.get_usage_limits.daily_limit }}</td>
+                                    <td>{{ record.get_usage_limits.monthly_limit }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ record.status_class }}">
+                                            {% if record.status == 'at_limit' %}
+                                                At Limit
+                                            {% elif record.status == 'near_limit' %}
+                                                Near Limit
+                                            {% else %}
+                                                Normal
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.last_used|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Analytics Tab -->
+        <div class="tab-pane fade" id="analytics" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Subscription Analytics</h3>
+                <a href="{% url 'core:subscription_analytics' %}" class="btn btn-primary">
+                    <i class="bi bi-bar-chart"></i> Detailed Analytics
+                </a>
+            </div>
+            
+            <!-- Quick Analytics Overview -->
+            <div class="row">
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Average Lifetime</h5>
+                            <h3 class="mb-0">{{ avg_lifetime_months|default:"0" }} months</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Avg. Revenue/Customer</h5>
+                            <h3 class="mb-0">₦{{ avg_revenue|default:"0"|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Churn Rate</h5>
+                            <h3 class="mb-0">{{ churn_rate|default:"0" }}%</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Growth Rate</h5>
+                            <h3 class="mb-0">{{ growth_rate|default:"0" }}%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recovery Management Tab -->
+        <div class="tab-pane fade" id="recovery" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Subscription Recovery</h3>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#retryPaymentsModal">
+                        <i class="bi bi-arrow-repeat"></i> Retry Failed Payments
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recovery Overview Cards -->
+            <div class="row mb-4">
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Failed Payments</h5>
+                            <h3 class="text-danger mb-0">{{ failed_payments_count|default:"0" }}</h3>
+                            <small class="text-muted">Last 30 days</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">In Grace Period</h5>
+                            <h3 class="text-warning mb-0">{{ grace_period_count|default:"0" }}</h3>
+                            <small class="text-muted">Active grace periods</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Recovery Rate</h5>
+                            <h3 class="text-success mb-0">{{ recovery_rate|default:"0" }}%</h3>
+                            <small class="text-muted">Last 30 days</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Pending Reactivations</h5>
+                            <h3 class="text-info mb-0">{{ pending_reactivations|default:"0" }}</h3>
+                            <small class="text-muted">Awaiting processing</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failed Payments Table -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Failed Payments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Plan</th>
+                                    <th>Amount</th>
+                                    <th>Failed Date</th>
+                                    <th>Attempts</th>
+                                    <th>Grace Period</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in failed_payments %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'core:admin_user_details' payment.subscription.user.id %}">
+                                            {{ payment.subscription.user.email }}
+                                        </a>
+                                    </td>
+                                    <td>{{ payment.subscription.get_tier_display }}</td>
+                                    <td>₦{{ payment.amount|floatformat:2 }}</td>
+                                    <td>{{ payment.failed_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ payment.retry_count }}</td>
+                                    <td>
+                                        {% if payment.grace_period_end %}
+                                            <span class="text-warning">
+                                                Ends {{ payment.grace_period_end|date:"Y-m-d" }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger">Expired</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ payment.status_class }}">
+                                            {{ payment.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="retryPayment({{ payment.id }})">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" onclick="extendGracePeriod({{ payment.id }})">
+                                            <i class="bi bi-clock"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grace Period Management -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Grace Period Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Plan</th>
+                                    <th>Grace Start</th>
+                                    <th>Grace End</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grace in grace_periods %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'core:admin_user_details' grace.subscription.user.id %}">
+                                            {{ grace.subscription.user.email }}
+                                        </a>
+                                    </td>
+                                    <td>{{ grace.subscription.get_tier_display }}</td>
+                                    <td>{{ grace.start_date|date:"Y-m-d" }}</td>
+                                    <td>{{ grace.end_date|date:"Y-m-d" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ grace.status_class }}">
+                                            {{ grace.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="extendGracePeriod({{ grace.id }})">
+                                            <i class="bi bi-clock"></i> Extend
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="endGracePeriod({{ grace.id }})">
+                                            <i class="bi bi-x-circle"></i> End
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounting Tab -->
+        <div class="tab-pane fade" id="accounting" role="tabpanel">
+            <!-- Revenue Overview and Metrics Cards -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Revenue Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="text-primary">₦{{ total_revenue|floatformat:2 }}</h3>
+                            <p class="text-muted">Total Revenue</p>
+                            <hr>
+                            {% for metric in plan_metrics %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ metric.plan_name }}</span>
+                                <span class="text-success">₦{{ metric.monthly_revenue|floatformat:2 }}/month</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Subscription Metrics</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for metric in plan_metrics %}
+                            <div class="mb-3">
+                                <h6>{{ metric.plan_name }}</h6>
+                                <div class="d-flex justify-content-between text-muted">
+                                    <span>Active Subscribers:</span>
+                                    <span>{{ metric.active_subscribers }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted">
+                                    <span>Total Revenue:</span>
+                                    <span>₦{{ metric.total_revenue|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            {% if not forloop.last %}<hr>{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <!-- Revenue Distribution Chart -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Revenue Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="revenueDistributionChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Subscriber Distribution Chart -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Subscriber Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="subscriberDistributionChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Trends Chart -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Monthly Revenue Trends</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyTrendsChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for Plan Management -->
+{% include "core/admin/subscription_modals.html" %}
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize charts when the accounting tab is shown
+    document.getElementById('accounting-tab').addEventListener('click', function() {
+        initializeCharts();
+    });
+
+    function initializeCharts() {
+        // Revenue Distribution Chart (Pie Chart)
+        const revenueCtx = document.getElementById('revenueDistributionChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'pie',
+            data: {
+                labels: [{% for metric in plan_metrics %}'{{ metric.plan_name }}',{% endfor %}],
+                datasets: [{
+                    data: [{% for metric in plan_metrics %}{{ metric.total_revenue }},{% endfor %}],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 206, 86, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Revenue by Plan'
+                    }
+                }
+            }
+        });
+
+        // Subscriber Distribution Chart (Doughnut Chart)
+        const subscriberCtx = document.getElementById('subscriberDistributionChart').getContext('2d');
+        new Chart(subscriberCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for metric in plan_metrics %}'{{ metric.plan_name }}',{% endfor %}],
+                datasets: [{
+                    data: [{% for metric in plan_metrics %}{{ metric.active_subscribers }},{% endfor %}],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 206, 86, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Subscribers by Plan'
+                    }
+                }
+            }
+        });
+
+        // Monthly Trends Chart (Line Chart)
+        const trendsCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+        new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Monthly Revenue',
+                    data: [{% for metric in monthly_trends %}{{ metric.revenue }},{% endfor %}],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Revenue Trends (Last 6 Months)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₦' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Search and filter functionality
+    document.getElementById('userSearch').addEventListener('input', function(e) {
+        // Implement search functionality
+    });
+
+    document.getElementById('tierFilter').addEventListener('change', function(e) {
+        // Implement tier filtering
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', function(e) {
+        // Implement status filtering
+    });
+
+    // Cancel subscription function
+    function cancelSubscription(subscriptionId) {
+        if (confirm('Are you sure you want to cancel this subscription?')) {
+            fetch(`/admin/subscriptions/${subscriptionId}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to cancel subscription: ' + data.error);
+                }
+            });
+        }
+    }
+
+    // CSRF token helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Recovery Management Functions
+    function retryPayment(paymentId) {
+        if (confirm('Are you sure you want to retry this payment?')) {
+            fetch(`/administration/subscriptions/retry-payment/${paymentId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to retry payment: ' + data.error);
+                }
+            });
+        }
+    }
+
+    function extendGracePeriod(graceId) {
+        const days = prompt('Enter number of days to extend:', '7');
+        if (days) {
+            fetch(`/administration/subscriptions/extend-grace/${graceId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ days: parseInt(days) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to extend grace period: ' + data.error);
+                }
+            });
+        }
+    }
+
+    function endGracePeriod(graceId) {
+        if (confirm('Are you sure you want to end this grace period?')) {
+            fetch(`/administration/subscriptions/end-grace/${graceId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to end grace period: ' + data.error);
+                }
+            });
+        }
+    }
+</script>
+{% endblock %} 

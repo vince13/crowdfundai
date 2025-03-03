@@ -1,0 +1,94 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Escrow Balance</h2>
+
+    <!-- Total Balance Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Total Balance in Escrow</h5>
+            <h2 class="text-primary">₦{{ total_balance|floatformat:2|intcomma }}</h2>
+        </div>
+    </div>
+
+    <!-- Apps Balance Table -->
+    <div class="card bg-dark text-white mb-4">
+        <div class="card-header bg-dark border-secondary">
+            <h5 class="mb-0">Balance by App</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>App Name</th>
+                            <th>Escrow Balance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in apps %}
+                        <tr>
+                            <td class="text-white">{{ app.name }}</td>
+                            <td class="text-white">₦{{ app.funds_in_escrow|floatformat:2|intcomma }}</td>
+                            <td>
+                                <a href="{% url 'core:developer-app-transactions' app.id %}" 
+                                   class="btn btn-sm btn-outline-light">View Transactions</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card bg-dark text-white">
+        <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Transactions</h5>
+            <a href="{% url 'core:developer-escrow-history' %}" class="btn btn-sm btn-outline-light">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>App</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr>
+                            <td class="text-white">{{ transaction.created_at|date:"M d, Y" }}</td>
+                            <td class="text-white">{{ transaction.app.name }}</td>
+                            <td class="text-white">{{ transaction.get_transaction_type_display }}</td>
+                            <td class="text-white">₦{{ transaction.amount|floatformat:2|intcomma }}</td>
+                            <td>
+                                <span class="badge {% if transaction.status == 'COMPLETED' %}bg-success{% elif transaction.status == 'PENDING' %}bg-warning{% elif transaction.status == 'FAILED' %}bg-danger{% elif transaction.status == 'PROCESSING' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ transaction.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="alert alert-dark mb-0">
+                                    No recent transactions
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

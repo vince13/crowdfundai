@@ -1,0 +1,59 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Pay for Advertisement{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Advertisement Information</h6>
+                            <p><strong>Title:</strong> {{ ad.title }}</p>
+                            <p><strong>Position:</strong> {{ ad.get_position_display }}</p>
+                            <p><strong>Duration:</strong> {{ ad.start_date|date }} to {{ ad.end_date|date }}</p>
+                            {% if ad.app %}
+                            <p><strong>App:</strong> {{ ad.app.title }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Payment Summary</h6>
+                            <div class="bg-light bg-dark-subtle p-3 rounded border">
+                                <p class="mb-2"><strong class="text-body">Base Price:</strong> <span class="text-body">₦{{ ad.price|floatformat:2 }}</span></p>
+                                <hr class="border-secondary">
+                                <h5 class="mb-0 text-body">Total: ₦{{ ad.price|floatformat:2 }}</h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        You will be redirected to Paystack to complete your payment securely.
+                    </div>
+
+                    <form method="post" id="paymentForm">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Proceed to Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{% url 'core:ad_list' %}" class="btn btn-link">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Advertisements
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,300 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Payment Information - AI App Marketplace{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    }
+    
+    .subscription-details {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .price-tag {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 1rem 0;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .feature-list li {
+        padding: 0.5rem 0;
+        color: #555;
+    }
+    
+    .feature-list li i {
+        color: #28a745;
+        margin-right: 0.5rem;
+    }
+    
+    .payment-form {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .security-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-pay {
+        background: #007bff;
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-pay:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+    }
+    
+    .payment-methods {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .payment-method-card {
+        border: 1px solid #ddd;
+        padding: 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .payment-method-card:hover,
+    .payment-method-card.active {
+        border-color: #007bff;
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <h1 class="mb-4">Complete Your Subscription</h1>
+    
+    <div class="row">
+        <!-- Subscription Details -->
+        <div class="col-md-5">
+            <div class="subscription-details">
+                <h3>{{ subscription_plan.name }}</h3>
+                <div class="price-tag">
+                    ₦{{ subscription_plan.price|floatformat:2 }}<span class="text-muted" style="font-size: 1rem;">/month</span>
+                </div>
+                
+                <ul class="feature-list">
+                    {% for feature in subscription_plan.features %}
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        {{ feature }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle"></i>
+                    You can cancel or change your subscription at any time
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payment Form -->
+        <div class="col-md-7">
+            <div class="payment-form">
+                <h4 class="mb-4">Payment Information</h4>
+                
+                <div class="payment-methods mb-4">
+                    <div class="app-logo mb-3 text-center">
+                        <img src="{% static 'core/img/logo.png' %}" alt="AI App Marketplace" height="50" class="mb-2">
+                        <h5 class="text-muted">Secure Payment</h5>
+                    </div>
+                    <div class="payment-method-card active d-flex align-items-center justify-content-between">
+                        <span>Payment processed by</span>
+                        <img src="{% static 'core/img/paystack-logo.png' %}" alt="Paystack" height="30">
+                    </div>
+                </div>
+                
+                <form id="payment-form" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="tier" value="{{ subscription_plan.tier }}">
+                    <input type="hidden" name="plan_name" value="{{ subscription_plan.name }}">
+                    <input type="hidden" name="plan_price" value="{{ subscription_plan.price }}">
+                    
+                    <div class="form-group">
+                        <label for="card-holder">Card Holder Name</label>
+                        <input type="text" class="form-control" id="card-holder" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="card-number">Card Number</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="card-number" required>
+                            <div class="input-group-append">
+                                <span class="input-group-text">
+                                    <i class="fas fa-credit-card"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="expiry">Expiry Date</label>
+                                <input type="text" class="form-control" id="expiry" placeholder="MM/YY" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="cvv">CVV</label>
+                                <input type="text" class="form-control" id="cvv" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-pay">
+                        Pay ₦{{ subscription_plan.price|floatformat:2 }}
+                    </button>
+                    
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        Secured by Paystack. Your payment information is encrypted.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+document.getElementById('payment-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const paymentForm = document.getElementById('payment-form');
+    const btn = paymentForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Get subscription details from hidden fields
+    const tier = paymentForm.querySelector('input[name="tier"]').value;
+    const planName = paymentForm.querySelector('input[name="plan_name"]').value;
+    const planPrice = paymentForm.querySelector('input[name="plan_price"]').value;
+    
+    // Initialize Paystack payment
+    const handler = PaystackPop.setup({
+        key: '{{ paystack_public_key }}',
+        email: '{{ user.email }}',
+        amount: parseFloat(planPrice) * 100, // Convert to kobo
+        currency: 'NGN',
+        ref: '{{ payment_reference }}',
+        metadata: {
+            payment_type: 'subscription',
+            user_id: '{{ user.id }}',
+            plan: tier,
+            custom_fields: [
+                {
+                    display_name: "Plan Type",
+                    variable_name: "plan_type",
+                    value: tier
+                }
+            ]
+        },
+        callback: function(response) {
+            // Create form data for backend verification
+            const formData = new FormData();
+            formData.append('reference', response.reference);
+            formData.append('tier', tier);
+            formData.append('plan_name', planName);
+            formData.append('plan_price', planPrice);
+            
+            // Submit to backend for verification
+            fetch("{% url 'core:verify_payment' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert('Payment verification failed. Please contact support.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Pay ₦' + planPrice;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = 'Pay ₦' + planPrice;
+            });
+        },
+        onClose: function() {
+            btn.disabled = false;
+            btn.innerHTML = 'Pay ₦' + planPrice;
+        }
+    });
+    handler.openIframe();
+});
+
+// Format card number input
+document.getElementById('card-number').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = value.replace(/(.{4})/g, '$1 ').trim();
+    e.target.value = value;
+});
+
+// Format expiry date input
+document.getElementById('expiry').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length >= 2) {
+        value = value.slice(0,2) + '/' + value.slice(2);
+    }
+    e.target.value = value;
+});
+
+// Format CVV input
+document.getElementById('cvv').addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0,4);
+});
+</script>
+{% endblock %} 

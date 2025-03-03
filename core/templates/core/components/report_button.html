@@ -1,0 +1,47 @@
+{% load static %}
+
+<button type="button" class="btn btn-sm btn-outline-danger" 
+        data-bs-toggle="modal" data-bs-target="#reportModal{{ object.id }}">
+    <i class="bi bi-flag"></i> Report
+</button>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal{{ object.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Report Content</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm{{ object.id }}" class="report-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="content_type" value="{{ object|content_type_id }}">
+                    <input type="hidden" name="object_id" value="{{ object.id }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Report</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Select a reason...</option>
+                            {% for value, label in report_reasons %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="4" required
+                                  placeholder="Please provide details about your report..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="reportForm{{ object.id }}" class="btn btn-primary">
+                    Submit Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div> 

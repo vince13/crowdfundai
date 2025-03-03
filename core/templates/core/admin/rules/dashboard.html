@@ -1,0 +1,146 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+{% load rule_filters %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/rules.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Business Rules Management</h1>
+        <div class="btn-group">
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-plus-circle"></i> Add New Rule
+            </button>
+            <ul class="dropdown-menu">
+                {% for type_code, type_name in rule_types %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'core:new_rule' type_code %}">
+                        {{ type_name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Rule Categories -->
+    <div class="row">
+        {% for type_code, type_name in rule_types %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ type_name }}</h5>
+                </div>
+                <div class="card-body">
+                    {% with type_rules=rules|get_item:type_code %}
+                    {% if type_rules %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Rule Name</th>
+                                        <th>Value</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rule in type_rules %}
+                                    <tr>
+                                        <td>{{ rule.name }}</td>
+                                        <td>
+                                            <pre class="mb-0"><code>{{ rule.value|json_pretty }}</code></pre>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{% url 'core:edit_rule' type_code rule.id %}" 
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-info"
+                                                        onclick="testRule('{{ type_code }}', {{ rule.id }})">
+                                                    <i class="bi bi-play"></i>
+                                                </button>
+                                                <form action="{% url 'core:delete_rule' rule.id %}" 
+                                                      method="POST" 
+                                                      style="display: inline;"
+                                                      onsubmit="return confirm('Are you sure you want to delete this rule?')">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No rules defined for this category.</p>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Test Rule Modal -->
+<div class="modal fade" id="testRuleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testRuleForm">
+                    <div class="mb-3">
+                        <label class="form-label">Test Context (JSON)</label>
+                        <textarea class="form-control" id="testContext" rows="5"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="runTest()">Run Test</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function testRule(ruleType, ruleId) {
+        currentRuleType = ruleType;
+        $('#testRuleModal').modal('show');
+    }
+
+    function runTest() {
+        const context = JSON.parse($('#testContext').val());
+        
+        $.ajax({
+            url: '{% url "core:test_rule" %}',
+            method: 'POST',
+            data: {
+                rule_type: currentRuleType,
+                context: JSON.stringify(context),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                alert(response.message);
+            },
+            error: function(xhr) {
+                alert('Error testing rule: ' + xhr.responseText);
+            }
+        });
+    }
+</script>
+{% endblock %} 

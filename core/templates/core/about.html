@@ -1,0 +1,135 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">About AI Crowdfunding</h2>
+            
+            <!-- Mission Statement -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Our Mission</h5>
+                    <p class="card-text">
+                        To democratize AI investment by connecting innovative developers with forward-thinking investors, 
+                        creating opportunities for both technological advancement and financial growth in the AI sector.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- What We Do -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">What We Do</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-laptop fs-1 text-primary mb-2"></i>
+                                <h6>Connect</h6>
+                                <p class="small">Bridge the gap between AI developers and potential investors</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-shield-check fs-1 text-primary mb-2"></i>
+                                <h6>Secure</h6>
+                                <p class="small">Ensure safe and transparent investment processes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-graph-up-arrow fs-1 text-primary mb-2"></i>
+                                <h6>Grow</h6>
+                                <p class="small">Foster the growth of AI innovation and investment returns</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <i class="bi bi-people fs-1 text-primary mb-2"></i>
+                                <h6>Community-Driven</h6>
+                                <p class="small">Empower community to suggest, vote, and fund AI solutions they need</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Why Choose Us -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Why Choose Us</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span class="text-secondary">Verified AI Applications: Each app undergoes thorough verification</span>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span class="text-secondary">Secure Investment Process: Protected by advanced security measures</span>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span class="text-secondary">Transparent Tracking: Monitor your investments in real-time</span>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span class="text-secondary">Professional Support: Dedicated team to assist you</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Community-Driven Innovation -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Our Community-Driven Innovation</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="text-secondary mb-4">
+                                We're excited to put the power of AI development in the hands of our community. You are able to:
+                            </p>
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                                    <span class="text-secondary">Suggest AI applications that solve real-world problems</span>
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-hand-thumbs-up-fill text-primary me-2"></i>
+                                    <span class="text-secondary">Vote and like app ideas from the community</span>
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-people-fill text-success me-2"></i>
+                                    <span class="text-secondary">Support promising ideas through community funding</span>
+                                </li>
+                                <li class="mb-3">
+                                    <i class="bi bi-rocket-fill text-danger me-2"></i>
+                                    <span class="text-secondary">Watch ideas transform into successful AI applications</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <i class="bi bi-diagram-3-fill text-primary" style="font-size: 5rem;"></i>
+                            <p class="text-secondary mt-2">Empowering Community Innovation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ready to Get Started?</h5>
+                    <p class="card-text">Join our community of AI investors and developers today.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'core:app_list' %}" class="btn btn-primary">Browse Apps</a>
+                        <a href="{% url 'core:contact' %}" class="btn btn-outline-primary">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

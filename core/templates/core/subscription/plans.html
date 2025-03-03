@@ -1,0 +1,345 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Subscription Plans - AI App Marketplace{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Light mode styles */
+    [data-theme="light"] .plan-card {
+        height: 100%;
+        border: 1px solid #dee2e6;
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+        background: #fff;
+        padding: 2rem;
+    }
+
+    /* Dark mode styles */
+    [data-theme="dark"] .plan-card {
+        height: 100%;
+        border: 1px solid #2d3748;
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+        background: #1a202c;
+        padding: 2rem;
+        color: #e2e8f0;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-5px);
+    }
+
+    [data-theme="light"] .plan-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+    }
+
+    [data-theme="dark"] .plan-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.5);
+    }
+
+    [data-theme="light"] .plan-card.active {
+        border: 2px solid #0d6efd;
+        background-color: rgba(13,110,253,.03);
+    }
+
+    [data-theme="dark"] .plan-card.active {
+        border: 2px solid #3b82f6;
+        background-color: rgba(59,130,246,.1);
+    }
+
+    .feature-list {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .feature-list li {
+        margin-bottom: 0.75rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    [data-theme="light"] .feature-list li::before {
+        content: "✓";
+        color: #0d6efd;
+        position: absolute;
+        left: 0;
+    }
+
+    [data-theme="dark"] .feature-list li::before {
+        content: "✓";
+        color: #3b82f6;
+        position: absolute;
+        left: 0;
+    }
+
+    [data-theme="light"] .price-text {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    [data-theme="dark"] .price-text {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #3b82f6;
+    }
+
+    [data-theme="light"] .price-period {
+        font-size: 1rem;
+        color: #6c757d;
+    }
+
+    [data-theme="dark"] .price-period {
+        font-size: 1rem;
+        color: #9ca3af;
+    }
+
+    [data-theme="dark"] .text-muted {
+        color: #9ca3af !important;
+    }
+
+    [data-theme="dark"] .card {
+        background-color: #1a202c;
+        border-color: #2d3748;
+    }
+
+    [data-theme="dark"] .border-top {
+        border-top-color: #2d3748 !important;
+    }
+
+    [data-theme="dark"] .display-4,
+    [data-theme="dark"] .h3,
+    [data-theme="dark"] .h5 {
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .btn-primary {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    [data-theme="dark"] .btn-primary:hover {
+        background-color: #2563eb;
+        border-color: #2563eb;
+    }
+
+    [data-theme="dark"] .btn-danger {
+        background-color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    [data-theme="dark"] .btn-danger:hover {
+        background-color: #dc2626;
+        border-color: #dc2626;
+    }
+
+    [data-theme="dark"] .badge.bg-primary {
+        background-color: #3b82f6 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">Choose Your Plan</h1>
+        <p class="lead text-muted">Select the plan that best fits your needs</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+        <!-- Free Plan -->
+        <div class="col">
+            <div class="plan-card {% if current_subscription.tier == 'FREE' %}active{% endif %}">
+                <div class="text-center mb-4">
+                    <h2 class="h3 fw-bold mb-3">{{ plans.free.name }}</h2>
+                    <div class="mb-3">
+                        <span class="price-text">₦{{ plans.free.price }}</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <p class="text-muted">Perfect for getting started</p>
+                </div>
+                <ul class="feature-list mb-4">
+                    {% for feature in plans.free.features %}
+                    <li>{{ feature }}</li>
+                    {% endfor %}
+                </ul>
+                {% if current_subscription.tier == 'FREE' %}
+                <div class="text-center">
+                    <span class="badge bg-primary px-4 py-2">Current Plan</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Developer Pro Plan -->
+        <div class="col">
+            <div class="plan-card {% if current_subscription.tier == 'DEV_PRO' and current_subscription.is_active %}active{% endif %}">
+                <div class="text-center mb-4">
+                    <h2 class="h3 fw-bold mb-3">{{ plans.developer.name }}</h2>
+                    <div class="mb-3">
+                        <span class="price-text">₦{{ plans.developer.price }}</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <p class="text-muted">For app developers</p>
+                </div>
+                <ul class="feature-list mb-4">
+                    {% for feature in plans.developer.features %}
+                    <li>{{ feature }}</li>
+                    {% endfor %}
+                </ul>
+                {% if current_subscription.tier == 'DEV_PRO' and current_subscription.is_active %}
+                <div class="text-center">
+                    <span class="badge bg-primary px-4 py-2 mb-3">Current Plan</span>
+                    {% if not current_subscription.auto_renew and current_subscription.end_date %}
+                    <div class="alert alert-warning mb-3">
+                        Your subscription will end on {{ current_subscription.end_date|date:"F j, Y" }}
+                    </div>
+                    {% else %}
+                    <form method="post" action="{% url 'core:cancel_subscription' %}" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger w-100" 
+                                onclick="return confirm('Are you sure you want to cancel your subscription? You will maintain access to premium features until the end of your billing period.')">
+                            Cancel Subscription
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% else %}
+                <form method="post" action="{% url 'core:payment_page' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="tier" value="{{ plans.developer.tier }}">
+                    <button type="submit" class="btn btn-primary w-100">
+                        {% if current_subscription.tier == 'DEV_PRO' and not current_subscription.is_active %}
+                        Reactivate Developer Pro
+                        {% else %}
+                        Upgrade to Developer Pro
+                        {% endif %}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Investor Pro Plan -->
+        <div class="col">
+            <div class="plan-card {% if current_subscription.tier == 'INV_PRO' and current_subscription.is_active %}active{% endif %}">
+                <div class="text-center mb-4">
+                    <h2 class="h3 fw-bold mb-3">{{ plans.investor.name }}</h2>
+                    <div class="mb-3">
+                        <span class="price-text">₦{{ plans.investor.price }}</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <p class="text-muted">For investors</p>
+                </div>
+                <ul class="feature-list mb-4">
+                    {% for feature in plans.investor.features %}
+                    <li>{{ feature }}</li>
+                    {% endfor %}
+                </ul>
+                {% if current_subscription.tier == 'INV_PRO' and current_subscription.is_active %}
+                <div class="text-center">
+                    <span class="badge bg-primary px-4 py-2 mb-3">Current Plan</span>
+                    {% if not current_subscription.auto_renew and current_subscription.end_date %}
+                    <div class="alert alert-warning mb-3">
+                        Your subscription will end on {{ current_subscription.end_date|date:"F j, Y" }}
+                    </div>
+                    {% else %}
+                    <form method="post" action="{% url 'core:cancel_subscription' %}" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger w-100" 
+                                onclick="return confirm('Are you sure you want to cancel your subscription? You will maintain access to premium features until the end of your billing period.')">
+                            Cancel Subscription
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% else %}
+                <form method="post" action="{% url 'core:payment_page' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="tier" value="{{ plans.investor.tier }}">
+                    <button type="submit" class="btn btn-primary w-100">
+                        {% if current_subscription.tier == 'INV_PRO' and not current_subscription.is_active %}
+                        Reactivate Investor Pro
+                        {% else %}
+                        Upgrade to Investor Pro
+                        {% endif %}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if current_subscription %}
+    <div class="mt-5 pt-5 border-top">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="h3 fw-bold mb-4">Subscription Details</h2>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-sm-6">
+                                <h6 class="text-muted mb-1">Current Plan</h6>
+                                <p class="h5 mb-0">{{ current_subscription.get_tier_display }}</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <h6 class="text-muted mb-1">Status</h6>
+                                <p class="h5 mb-0">
+                                    {% if current_subscription.is_active %}
+                                        {% if not current_subscription.auto_renew and current_subscription.end_date %}
+                                            Active (Cancels on {{ current_subscription.end_date|date:"F j" }})
+                                        {% else %}
+                                            Active
+                                        {% endif %}
+                                    {% else %}
+                                        Inactive
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if current_subscription.end_date and current_subscription.tier != 'FREE' %}
+                            <div class="col-sm-6">
+                                <h6 class="text-muted mb-1">
+                                    {% if not current_subscription.auto_renew %}
+                                        Access Until
+                                    {% else %}
+                                        Next Billing Date
+                                    {% endif %}
+                                </h6>
+                                <p class="h5 mb-0">{{ current_subscription.end_date|date:"F j, Y" }}</p>
+                            </div>
+                            {% endif %}
+                            {% if current_subscription.tier != 'FREE' %}
+                            <div class="col-sm-6">
+                                <h6 class="text-muted mb-1">Auto-renew</h6>
+                                <p class="h5 mb-0">{% if current_subscription.auto_renew %}Yes{% else %}No{% endif %}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Any additional JavaScript functionality can be added here
+    });
+</script>
+{% endblock %} 

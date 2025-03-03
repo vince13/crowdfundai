@@ -1,0 +1,811 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load currency_tags %}
+{% load money_filters %}
+
+{% block title %}Available Apps{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bg-purple-subtle {
+        background-color: rgba(137, 100, 255, 0.1) !important;
+    }
+    .text-purple {
+        color: #8964ff !important;
+    }
+    .border-purple-subtle {
+        border-color: rgba(137, 100, 255, 0.3) !important;
+    }
+    
+    .app-card {
+        padding: 0.75rem;
+        opacity: 1;
+        transform: translateY(0);
+        transition: all 0.4s ease-in-out;
+    }
+    
+    .app-card.hidden {
+        display: none;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    
+    .show-more-btn {
+        transition: all 0.3s ease;
+        background: linear-gradient(45deg, #6c63ff, #5a51d6);
+        border: none;
+        box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+    }
+    
+    .show-more-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+        background: linear-gradient(45deg, #5a51d6, #4a42c7);
+    }
+    
+    .app-counter {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: #6c63ff;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .filter-badge {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-badge:hover {
+        transform: translateY(-2px);
+    }
+
+    .progress {
+        height: 10px;
+        background-color: #f0f0f0;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        transition: width 1s ease-in-out;
+    }
+
+    @media (max-width: 768px) {
+        .app-grid {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+
+        /* Improve badge positioning for Nominated apps */
+        .app-card .card-body {
+            position: relative;  /* Enable absolute positioning context */
+        }
+
+        .app-card .d-flex:first-child {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .app-card .badge-container {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            max-width: 50%;
+        }
+
+        .app-card .badge {
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        /* Ensure app name has proper spacing */
+        .app-card .h5 {
+            padding-right: 80px;  /* Make space for badges */
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .app-card {
+            padding: 0.375rem;
+        }
+
+        .app-card .card-body {
+            padding: 0.875rem !important;
+        }
+        
+        .app-card .d-flex {
+            flex-wrap: wrap;
+        }
+        
+        .app-card .d-flex.justify-content-between {
+            gap: 0.5rem;
+        }
+
+        .app-card .badge-container {
+            top: 0.875rem;
+            right: 0.875rem;
+        }
+    }
+
+    /* Modern Pagination styles */
+    .pagination {
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+    
+    .page-link {
+        border-radius: 0.75rem;
+        border: 2px solid #eef0f5;
+        color: #6c757d;
+        padding: 0.75rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: white;
+        box-shadow: 0 2px 4px rgba(108, 117, 125, 0.05);
+    }
+    
+    .page-link:hover {
+        background: linear-gradient(45deg, #6c757d, #5a6268);
+        border-color: #6c757d;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
+    }
+    
+    .page-item.active .page-link {
+        background: linear-gradient(45deg, #6c757d, #5a6268);
+        border-color: #6c757d;
+        color: white;
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
+    }
+    
+    .page-item.disabled .page-link {
+        background-color: #f8f9fa;
+        border-color: #eef0f5;
+        color: #9ba3af;
+        box-shadow: none;
+    }
+
+    /* Pagination count text */
+    .pagination-count {
+        color: #6c757d;
+        font-size: 0.875rem;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .pagination {
+            gap: 0.25rem;
+        }
+        
+        .page-link {
+            padding: 0.5rem 0.875rem;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+        }
+        
+        .pagination-count {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Badge positioning for Nominated apps */
+    .app-card .card-body {
+        position: relative;  /* Enable absolute positioning context */
+    }
+
+    .app-card .status-badges {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 1;
+    }
+
+    /* Ensure app title has space for badges */
+    .app-card .app-title {
+        padding-right: 140px;  /* Increased space for multiple badges */
+    }
+
+    @media (max-width: 768px) {
+        .app-card .status-badges {
+            top: 0.875rem;
+            right: 0.875rem;
+        }
+
+        .app-card .app-title {
+            padding-right: 120px;  /* Slightly less space on mobile */
+            margin-top: 0.25rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .app-card .status-badges {
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+    }
+
+    /* Add card content height control */
+    .card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card-text {
+        flex-grow: 0;
+        height: 3em;  /* Fixed height for 2 lines */
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;  /* Show exactly 2 lines */
+        -webkit-box-orient: vertical;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Push metrics to bottom */
+    .app-metrics {
+        margin-top: auto;
+    }
+
+    @media (max-width: 768px) {
+        .card-text {
+            height: 2.5em;  /* Slightly smaller on mobile */
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="display-5 fw-bold mb-2">Available Apps</h1>
+            <p class="text-muted mb-0">Discover and invest in promising applications</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <div class="btn-group shadow-sm" role="group">
+                <a href="{% url 'core:app_list' %}?type=LISTED" 
+                   class="btn btn-outline-primary {% if current_type == 'LISTED' %}active{% endif %}">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>Listed
+                </a>
+                <a href="{% url 'core:app_list' %}?type=NOMINATED" 
+                   class="btn btn-outline-primary {% if current_type == 'NOMINATED' %}active{% endif %}">
+                    <i class="bi bi-lightning me-1"></i>Nominated
+                </a>
+                <a href="{% url 'core:app_list' %}?type=FUNDED" 
+                   class="btn btn-outline-success {% if current_type == 'FUNDED' %}active{% endif %}">
+                    <i class="bi bi-check-circle-fill me-1"></i>Funded
+                </a>
+            </div>
+            {% if user.is_authenticated and user.is_staff %}
+            <a href="{% url 'core:app_create' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i>Create App
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if apps %}
+    <!-- Apps Grid -->
+    <div class="row g-4 px-3" id="appsContainer">
+        {% for app in apps %}
+        <div class="col-12 col-md-6 col-lg-4 {% if forloop.counter > 9 %}hidden{% endif %}">
+            <div class="card h-100 shadow-sm hover-shadow transition-all mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h5 class="card-title h4 mb-0">{{ app.name }}</h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge {% if app.status == 'ACTIVE' or app.status == 'FUNDED' or app.status == 'COMPLETED' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-warning-subtle text-warning border border-warning-subtle{% endif %} rounded-pill px-3">
+                                <i class="bi {% if app.status == 'ACTIVE' or app.status == 'FUNDED' or app.status == 'COMPLETED' %}bi-check-circle-fill{% else %}bi-check-circle{% endif %} me-1"></i>
+                                {{ app.get_status_display }}
+                            </span>
+                            {% if app.listing_type == 'LISTED' %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3">
+                                {{ app.get_funding_round_display }}
+                            </span>
+                            {% endif %}
+                            {% if app.listing_type == 'NOMINATED' or app.listing_type == 'COMMUNITY' %}
+                            <span class="badge bg-purple-subtle text-purple border border-purple-subtle rounded-pill px-3">
+                                <i class="bi bi-people-fill me-1"></i>Community
+                            </span>
+                            {% endif %}
+                            {% if app.listing_type == 'FOR_SALE' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">
+                                <i class="bi bi-tag-fill me-1"></i>For Sale
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mb-3">
+                        <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3">
+                            <i class="bi bi-tag-fill me-1"></i>
+                            {{ app.get_category_display }}
+                        </span>
+                    </div>
+                    
+                    <p class="card-text text-muted">{{ app.description|truncatechars:120 }}</p>
+                    
+                    <div class="app-metrics">
+                        {% if app.listing_type == 'FOR_SALE' %}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="mb-0 text-success">{{ app.currency }} {{ app.sale_price|intcomma }}</h4>
+                                {% if app.monthly_revenue %}
+                                <span class="text-muted">
+                                    <i class="bi bi-graph-up me-1"></i>
+                                    {{ app.currency }} {{ app.monthly_revenue|intcomma }}/month
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row g-3">
+                                {% if app.monthly_users %}
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Monthly Users</div>
+                                        <div class="fw-semibold">{{ app.monthly_users|intcomma }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Deployment</div>
+                                        <div class="fw-semibold">{{ app.get_deployment_type_display }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if app.sale_includes_source_code %}
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-code-slash me-1"></i>Source Code
+                                    </span>
+                                    {% endif %}
+                                    {% if app.sale_includes_assets %}
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-file-earmark-richtext me-1"></i>Assets
+                                    </span>
+                                    {% endif %}
+                                    {% if app.sale_includes_support %}
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-headset me-1"></i>{{ app.support_duration_months }} Months Support
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% elif app.listing_type != 'NOMINATED' and app.listing_type != 'COMMUNITY' %}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-secondary">Funding Progress</small>
+                                <small class="text-secondary">{{ app.currency }} {{ app.funding_goal|intcomma }}</small>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar {% if app.status == 'FUNDED' %}bg-success{% else %}bg-primary{% endif %} rounded-pill"
+                                     role="progressbar"
+                                     style="width: {{ app.get_funding_progress|floatformat:1 }}%"
+                                     aria-valuenow="{{ app.get_funding_progress|floatformat:1 }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if app.listing_type == 'LISTED' %}
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Price Per %</div>
+                                        <div class="fw-semibold">{% if app.price_per_percentage %}₦{{ app.price_per_percentage|floatformat:2|intcomma }}{% else %}N/A{% endif %}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Available Equity</div>
+                                        <div class="fw-semibold">{{ app.remaining_percentage|floatformat:0|intcomma }}% of {{ app.available_percentage|floatformat:0|intcomma }}%</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Funding Goal</div>
+                                        <div class="fw-semibold">₦{{ app.funding_goal|floatformat:0|intcomma }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Company Value</div>
+                                        <div class="fw-semibold">{% if app.get_company_valuation %}₦{{ app.get_company_valuation|floatformat:0|intcomma }}{% else %}N/A{% endif %}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="row g-3 mb-4">
+                                {% if app.listing_type != 'NOMINATED' and app.listing_type != 'COMMUNITY' %}
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Development Cost</div>
+                                        <div class="fw-semibold">{{ app.funding_goal|money:app.currency|intcomma }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Market Interest</div>
+                                        <div class="d-flex flex-column">
+                                            <div class="fw-semibold mb-1">
+                                                <i class="bi bi-graph-up text-success me-1"></i>
+                                                {{ app.engagement_score|default:"0" }}%
+                                            </div>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <span class="text-muted small">
+                                                    <i class="bi bi-eye me-1"></i>{{ app.view_count|default:"0"|intcomma }}
+                                                </span>
+                                                <span class="text-muted small">
+                                                    <i class="bi bi-heart-fill text-danger me-1"></i>{{ app.get_total_likes|default:"0"|intcomma }}
+                                                </span>
+                                                <span class="text-muted small">
+                                                    <i class="bi bi-chat-dots me-1"></i>{{ app.get_total_comments|default:"0"|intcomma }}
+                                                </span>
+                                                <span class="text-muted small">
+                                                    <i class="bi bi-arrow-up-circle me-1"></i>{{ app.get_total_upvotes|default:"0"|intcomma }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="{% if app.listing_type == 'NOMINATED' or app.listing_type == 'COMMUNITY' %}col-6{% else %}col-12{% endif %}">
+                                    <div class="p-3 rounded-3 bg-light-subtle border">
+                                        <div class="text-secondary small mb-1">Development Timeline</div>
+                                        <div class="fw-semibold">{{ app.nomination_timeline.estimated_months|default:"TBD"|intcomma }} months</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if app.listing_type == 'NOMINATED' or app.listing_type == 'COMMUNITY' %}
+                        <div class="d-flex justify-content-end gap-3 mb-3">
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-arrow-up-circle me-1"></i>
+                                {{ app.get_total_upvotes|default:"0" }} Upvotes
+                            </span>
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-heart me-1"></i>
+                                {{ app.get_total_likes|default:"0" }} Likes
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            {% if app.listing_type == 'NOMINATED' %}
+                                <i class="bi bi-lightbulb fs-4 me-2 text-info"></i>
+                                <span class="text-secondary">@Admin Team</span>
+                            {% elif app.listing_type == 'COMMUNITY' %}
+                                <i class="bi bi-person-badge fs-4 me-2 text-info"></i>
+                                <span class="text-secondary">@{{ app.suggested_by.username }}</span>
+                            {% else %}
+                                <i class="bi bi-person-circle fs-4 me-2 text-secondary"></i>
+                                <span class="text-secondary">@{{ app.developer.username }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-primary rounded-pill px-4">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if apps.has_other_pages %}
+    <div class="d-flex flex-column align-items-center mt-5">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-lg">
+                {% if apps.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ apps.previous_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}" aria-label="Previous">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="bi bi-chevron-left"></i>
+                    </span>
+                </li>
+                {% endif %}
+
+                {% for num in apps.paginator.page_range %}
+                    {% if apps.number == num %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > apps.number|add:'-3' and num < apps.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if apps.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ apps.next_page_number }}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}" aria-label="Next">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        <div class="pagination-count">
+            Showing {{ apps.start_index }}-{{ apps.end_index }} of {{ apps.paginator.count }} apps
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-search display-1 text-muted"></i>
+        </div>
+        <h3 class="h4 text-muted mb-3">No apps found</h3>
+        <p class="text-muted mb-4">
+            {% if current_type == 'NOMINATED' %}
+                No nominated apps available at the moment.
+            {% elif current_type == 'FUNDED' %}
+                No funded apps available at the moment.
+            {% else %}
+                No apps available for funding at the moment.
+            {% endif %}
+        </p>
+        <a href="{% url 'core:home' %}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-house-door me-2"></i>Back to Home
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Floating Hire Us Button -->
+<div class="position-fixed bottom-0 end-0 m-4">
+    <button type="button" class="btn btn-primary btn-lg rounded-circle shadow-lg hire-us-btn" data-bs-toggle="modal" data-bs-target="#hireUsModal">
+        <i class="bi bi-briefcase-fill"></i>
+    </button>
+</div>
+
+<!-- Hire Us Modal -->
+<div class="modal fade" id="hireUsModal" tabindex="-1" aria-labelledby="hireUsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hireUsModalLabel">Hire Us for Your Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'core:hire_us' %}" method="POST" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="fullName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="fullName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectType" class="form-label">Project Type</label>
+                        <select class="form-select" id="projectType" name="project_type" required>
+                            <option value="">Select project type...</option>
+                            <option value="web">Web Development</option>
+                            <option value="mobile">Mobile App</option>
+                            <option value="ai">AI/ML Solution</option>
+                            <option value="blockchain">Blockchain</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Project Details</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow {
+    transition: all 0.2s ease-in-out;
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+.hire-us-btn {
+    width: 60px;
+    height: 60px;
+    transition: all 0.3s ease;
+}
+.hire-us-btn:hover {
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .display-5 {
+        font-size: 1.8rem;
+    }
+
+    .card-body {
+        padding: 1rem !important;
+    }
+
+    .btn-group {
+        width: 100%;
+        display: flex;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .badge {
+        font-size: 0.7rem;
+    }
+
+    .card-title.h4 {
+        font-size: 1.2rem;
+    }
+
+    .progress {
+        height: 8px !important;
+    }
+
+    .p-3 {
+        padding: 0.75rem !important;
+    }
+
+    .hire-us-btn {
+        width: 50px;
+        height: 50px;
+        bottom: 1rem;
+        right: 1rem;
+    }
+
+    .hire-us-btn i {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+        border-radius: 0.375rem !important;
+        margin-bottom: 0.25rem;
+    }
+}
+</style>
+
+{% if user.is_authenticated %}
+    {% if user.subscription %}
+        {# Show subscription-based content #}
+        <div class="subscription-info">
+            <p>Your current plan: {{ user.subscription.plan_name|default:"No Plan" }}</p>
+        </div>
+    {% else %}
+        {# Show default content #}
+        <div class="subscription-info">
+            <p>You don't have an active subscription</p>
+            <a href="{% url 'core:subscription_plans' %}" class="btn btn-primary">View Plans</a>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    // Add CSRF token to all fetch requests
+    document.addEventListener('DOMContentLoaded', function() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        if (!csrfToken) {
+            console.error('CSRF token not found');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate progress bars on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const progressBar = entry.target.querySelector('.progress-bar');
+                    if (progressBar) {
+                        const width = progressBar.getAttribute('aria-valuenow') + '%';
+                        progressBar.style.width = width;
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.progress').forEach(progress => {
+            observer.observe(progress);
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Moderation Dashboard</h1>
+    
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Reports</h5>
+                    <h2 class="card-text">{{ pending_reports_count }}</h2>
+                    <a href="{% url 'core:moderation_report_list' %}?status=PENDING" 
+                       class="btn btn-primary">View Reports</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Flagged Content</h5>
+                    <h2 class="card-text">{{ flagged_content_count }}</h2>
+                    <a href="{% url 'core:moderation_report_list' %}?status=FLAGGED" 
+                       class="btn btn-primary">View Content</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Report Categories</h5>
+                    <div class="list-group">
+                        {% for category in reports_by_reason %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ category.reason }}
+                                <span class="badge bg-primary rounded-pill">{{ category.count }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Recent Moderation Actions</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Moderator</th>
+                            <th>Action</th>
+                            <th>Content</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for action in recent_actions %}
+                            <tr>
+                                <td>{{ action.created_at|timesince }} ago</td>
+                                <td>{{ action.moderator.username }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ action.get_action_display }}</span>
+                                </td>
+                                <td>{{ action.content_object }}</td>
+                                <td>{{ action.notes|truncatechars:50 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'core:moderation_log' %}" class="btn btn-secondary">View Full Log</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

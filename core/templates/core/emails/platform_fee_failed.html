@@ -1,0 +1,62 @@
+{% extends "core/emails/base_email.html" %}
+
+{% block content %}
+<tr>
+    <td class="content-block">
+        <h2>Platform Fee Processing Failed</h2>
+    </td>
+</tr>
+
+<tr>
+    <td class="content-block">
+        <p>Hello {{ admin.get_full_name|default:admin.email }},</p>
+        
+        <p>The platform fee processing has failed for the following app:</p>
+        
+        <table class="details">
+            <tr>
+                <th>App Name:</th>
+                <td>{{ app.name }}</td>
+            </tr>
+            <tr>
+                <th>App ID:</th>
+                <td>{{ app.id }}</td>
+            </tr>
+            <tr>
+                <th>Developer:</th>
+                <td>{{ app.developer.get_full_name|default:app.developer.email }}</td>
+            </tr>
+            <tr>
+                <th>Funding Goal:</th>
+                <td>₦{{ app.funding_goal|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <th>Platform Fee (5%):</th>
+                <td>₦{{ app.calculate_platform_fee|floatformat:2 }}</td>
+            </tr>
+        </table>
+        
+        <p class="error-details">
+            <strong>Error Details:</strong><br>
+            {{ error }}
+        </p>
+        
+        <p>Please check the platform fee dashboard and process the fee manually if needed.</p>
+    </td>
+</tr>
+
+<tr>
+    <td class="content-block">
+        <a href="{{ site_url }}{% url 'core:platform_fee_dashboard' %}" class="btn-primary">View Platform Fee Dashboard</a>
+    </td>
+</tr>
+{% endblock %}
+
+{% block footer %}
+<tr>
+    <td class="content-block">
+        <p>This is an automated notification. Please do not reply to this email.</p>
+        <p>If you need assistance, please contact the development team.</p>
+    </td>
+</tr>
+{% endblock %} 

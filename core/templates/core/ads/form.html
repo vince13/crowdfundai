@@ -1,0 +1,559 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{% if ad %}Edit Advertisement{% else %}Create Advertisement{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+    /* Dark mode variables */
+    :root {
+        --dark-bg: #1a1a1a;
+        --dark-card-bg: #2d2d2d;
+        --dark-border: #404040;
+        --dark-text: #e0e0e0;
+        --dark-text-muted: #a0a0a0;
+        --dark-input-bg: #333333;
+        --dark-hover-bg: #404040;
+        --dark-shadow: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Base styles with dark mode support */
+    body.dark-mode {
+        background-color: var(--dark-bg);
+        color: var(--dark-text);
+    }
+
+    .dark-mode .form-section {
+        background: var(--dark-card-bg);
+        box-shadow: 0 0.125rem 0.25rem var(--dark-shadow);
+    }
+
+    .dark-mode .pricing-card {
+        background: var(--dark-card-bg);
+        border-color: var(--dark-border);
+    }
+
+    .dark-mode .pricing-card:hover {
+        background: var(--dark-hover-bg);
+        box-shadow: 0 0.5rem 1rem var(--dark-shadow);
+    }
+
+    .dark-mode .pricing-card.selected {
+        border-color: #0d6efd;
+        background-color: rgba(13,110,253,.15);
+    }
+
+    .dark-mode .text-muted,
+    .dark-mode .form-text {
+        color: var(--dark-text-muted) !important;
+    }
+
+    .dark-mode .form-control,
+    .dark-mode .form-select {
+        background-color: var(--dark-input-bg);
+        border-color: var(--dark-border);
+        color: var(--dark-text);
+    }
+
+    .dark-mode .form-control:focus,
+    .dark-mode .form-select:focus {
+        background-color: var(--dark-input-bg);
+        border-color: #0d6efd;
+        color: var(--dark-text);
+    }
+
+    .dark-mode .form-control::placeholder {
+        color: var(--dark-text-muted);
+    }
+
+    .dark-mode .preview-frame {
+        background: var(--dark-input-bg);
+        border-color: var(--dark-border);
+    }
+
+    .dark-mode .alert-info {
+        background-color: rgba(13,110,253,.15);
+        border-color: rgba(13,110,253,.3);
+        color: var(--dark-text);
+    }
+
+    .dark-mode .ql-toolbar {
+        background-color: var(--dark-card-bg);
+        border-color: var(--dark-border);
+    }
+
+    .dark-mode .ql-container {
+        background-color: var(--dark-input-bg);
+        border-color: var(--dark-border);
+    }
+
+    .dark-mode .ql-editor {
+        color: var(--dark-text);
+    }
+
+    .dark-mode .ql-snow .ql-stroke {
+        stroke: var(--dark-text);
+    }
+
+    .dark-mode .ql-snow .ql-fill {
+        fill: var(--dark-text);
+    }
+
+    /* Original styles */
+    .pricing-card {
+        border: 1px solid rgba(0,0,0,.125);
+        border-radius: 0.5rem;
+        transition: transform 0.2s;
+    }
+    .pricing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+    }
+    .pricing-card.selected {
+        border: 2px solid #0d6efd;
+        background-color: rgba(13,110,253,.03);
+    }
+    .feature-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    .feature-list li {
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+    .feature-list li::before {
+        content: "✓";
+        color: #198754;
+        position: absolute;
+        left: 0;
+    }
+    .ql-editor {
+        min-height: 200px;
+    }
+    .form-section {
+        background: #fff;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    }
+    .preview-frame {
+        border: 1px dashed #dee2e6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">{% if ad %}Edit Advertisement{% else %}Create New Advertisement{% endif %}</h1>
+                <a href="{% url 'core:ad_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Ads
+                </a>
+            </div>
+
+            <form method="post" id="adForm" class="needs-validation" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                
+                <!-- Position Selection -->
+                <div class="form-section">
+                    <h4 class="mb-4">1. Choose Advertisement Position</h4>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="pricing-card p-4 text-center {% if form.position.value == 'main' %}selected{% endif %}" 
+                                 onclick="selectPosition('main')">
+                                <h5>Main Content Ad</h5>
+                                <p class="h2 mb-3">₦5,000<small class="text-muted">/day</small></p>
+                                <ul class="feature-list text-start mb-4">
+                                    <li>Premium placement between blog posts</li>
+                                    <li>Maximum visibility</li>
+                                    <li>Higher engagement rate</li>
+                                    <li>Larger display size</li>
+                                </ul>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="position" 
+                                           id="positionMain" value="main" 
+                                           {% if form.position.value == 'main' %}checked{% endif %}>
+                                    <label class="form-check-label" for="positionMain">Select Main Position</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pricing-card p-4 text-center {% if form.position.value == 'sidebar' %}selected{% endif %}"
+                                 onclick="selectPosition('sidebar')">
+                                <h5>Sidebar Ad</h5>
+                                <p class="h2 mb-3">₦3,000<small class="text-muted">/day</small></p>
+                                <ul class="feature-list text-start mb-4">
+                                    <li>Persistent visibility</li>
+                                    <li>Cost-effective option</li>
+                                    <li>Targeted placement</li>
+                                    <li>Compact display format</li>
+                                </ul>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="position" 
+                                           id="positionSidebar" value="sidebar"
+                                           {% if form.position.value == 'sidebar' %}checked{% endif %}>
+                                    <label class="form-check-label" for="positionSidebar">Select Sidebar Position</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advertisement Details -->
+                <div class="form-section">
+                    <h4 class="mb-4">2. Advertisement Details</h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Title*</label>
+                            <input type="text" name="title" id="{{ form.title.id_for_label }}" 
+                                   class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                                   value="{{ form.title.value|default:'' }}" required>
+                            {% if form.title.errors %}
+                            <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Enter a descriptive title for your advertisement</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.app.id_for_label }}" class="form-label">Select App to Promote</label>
+                            <select name="app" id="{{ form.app.id_for_label }}" 
+                                    class="form-select {% if form.app.errors %}is-invalid{% endif %}">
+                                <option value="">Choose an app...</option>
+                                {% for app in user.applisting_set.all %}
+                                <option value="{{ app.id }}" {% if form.app.value|stringformat:"s" == app.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ app.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.app.errors %}
+                            <div class="invalid-feedback">{{ form.app.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Optional: Link this ad to one of your apps</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.company_name.id_for_label }}" class="form-label">Company Name*</label>
+                            <input type="text" name="company_name" id="{{ form.company_name.id_for_label }}"
+                                   class="form-control {% if form.company_name.errors %}is-invalid{% endif %}"
+                                   value="{{ form.company_name.value|default:'' }}" required>
+                            {% if form.company_name.errors %}
+                            <div class="invalid-feedback">{{ form.company_name.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Your company or organization name</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.contact_email.id_for_label }}" class="form-label">Contact Email*</label>
+                            <input type="email" name="contact_email" id="{{ form.contact_email.id_for_label }}"
+                                   class="form-control {% if form.contact_email.errors %}is-invalid{% endif %}"
+                                   value="{{ form.contact_email.value|default:'' }}" required>
+                            {% if form.contact_email.errors %}
+                            <div class="invalid-feedback">{{ form.contact_email.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Email for advertisement-related communications</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cta" class="form-label">Call to Action*</label>
+                            <select name="cta" id="cta" class="form-select {% if form.cta.errors %}is-invalid{% endif %}" required>
+                                <option value="">Choose action...</option>
+                                <option value="Visit Now" {% if form.cta.value == 'Visit Now' %}selected{% endif %}>Visit Now</option>
+                                <option value="Learn More" {% if form.cta.value == 'Learn More' %}selected{% endif %}>Learn More</option>
+                                <option value="Download" {% if form.cta.value == 'Download' %}selected{% endif %}>Download</option>
+                                <option value="Get Started" {% if form.cta.value == 'Get Started' %}selected{% endif %}>Get Started</option>
+                                <option value="Try Free" {% if form.cta.value == 'Try Free' %}selected{% endif %}>Try Free</option>
+                                <option value="Buy Now" {% if form.cta.value == 'Buy Now' %}selected{% endif %}>Buy Now</option>
+                                <option value="Sign Up" {% if form.cta.value == 'Sign Up' %}selected{% endif %}>Sign Up</option>
+                                <option value="Join Now" {% if form.cta.value == 'Join Now' %}selected{% endif %}>Join Now</option>
+                                <option value="Explore" {% if form.cta.value == 'Explore' %}selected{% endif %}>Explore</option>
+                                <option value="View Demo" {% if form.cta.value == 'View Demo' %}selected{% endif %}>View Demo</option>
+                            </select>
+                            {% if form.cta.errors %}
+                            <div class="invalid-feedback">{{ form.cta.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Choose the action button text for your advertisement</div>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="{{ form.url.id_for_label }}" class="form-label">Target URL*</label>
+                            <input type="url" name="target_url" id="{{ form.url.id_for_label }}"
+                                   class="form-control {% if form.url.errors %}is-invalid{% endif %}"
+                                   value="{{ form.url.value|default:'' }}" required
+                                   placeholder="https://">
+                            {% if form.url.errors %}
+                            <div class="invalid-feedback">{{ form.url.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Where users will be directed when they click your ad</div>
+                        </div>
+                        <div class="col-12">
+                            <label for="{{ form.image.id_for_label }}" class="form-label">Advertisement Image</label>
+                            <input type="file" name="image" id="{{ form.image.id_for_label }}" 
+                                   class="form-control {% if form.image.errors %}is-invalid{% endif %}"
+                                   accept="image/*">
+                            {% if form.image.errors %}
+                            <div class="invalid-feedback">{{ form.image.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Upload an image for your advertisement (optional)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duration -->
+                <div class="form-section">
+                    <h4 class="mb-4">3. Campaign Duration</h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date*</label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                            <div class="invalid-feedback d-block">{{ form.start_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date*</label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                            <div class="invalid-feedback d-block">{{ form.end_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div id="totalPrice" class="alert alert-info">
+                            Select dates to calculate total price
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Editor -->
+                <div class="form-section">
+                    <h4 class="mb-4">4. Advertisement Content</h4>
+                    <div id="editor">{{ form.content.value|safe }}</div>
+                    <input type="hidden" name="content" id="content">
+                    {% if form.content.errors %}
+                    <div class="invalid-feedback d-block">{{ form.content.errors.0 }}</div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h5>Live Preview</h5>
+                        <div class="preview-frame mt-2">
+                            <div id="preview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-section">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>What happens next?</h5>
+                        <ol class="mb-0">
+                            <li>Submit your advertisement for review</li>
+                            <li>Our team will review your content within 24 hours</li>
+                            <li>Once approved, you'll be prompted to complete payment</li>
+                            <li>Your ad will go live on the selected start date</li>
+                        </ol>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Submit for Review
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('adForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const quill = new Quill('#editor', {
+        theme: 'snow',
+            placeholder: 'Enter your advertisement content...',
+        modules: {
+            toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link']
+            ]
+        }
+    });
+
+        // Initialize date pickers
+        flatpickr('#start_date', {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today"
+        });
+
+        flatpickr('#end_date', {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today"
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Clear previous error states
+            form.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+            form.querySelectorAll('.invalid-feedback').forEach(el => {
+                el.remove();
+            });
+
+            // Create FormData object
+            const formData = new FormData(form);
+            
+            // Add Quill editor content
+            const content = quill.root.innerHTML;
+            formData.append('content', content);
+
+            // Validate required fields
+            const requiredFields = ['title', 'company_name', 'contact_email', 'position', 'target_url'];
+            let hasErrors = false;
+
+            requiredFields.forEach(field => {
+                const input = form.querySelector(`[name="${field}"]`);
+                if (!input.value.trim()) {
+                    markFieldAsInvalid(input, 'This field is required');
+                    hasErrors = true;
+                }
+            });
+
+            // Validate email format
+            const emailInput = form.querySelector('[name="contact_email"]');
+            if (emailInput.value && !isValidEmail(emailInput.value)) {
+                markFieldAsInvalid(emailInput, 'Please enter a valid email address');
+                hasErrors = true;
+            }
+
+            // Validate URL format
+            const urlInput = form.querySelector('[name="target_url"]');
+            if (urlInput.value && !isValidUrl(urlInput.value)) {
+                markFieldAsInvalid(urlInput, 'Please enter a valid URL');
+                hasErrors = true;
+            }
+
+            if (hasErrors) {
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (data.payment_required) {
+                        // Initialize payment
+                        const handler = PaystackPop.setup({
+                            key: '{{ paystack_public_key }}',
+                            email: data.email,
+                            amount: data.amount,
+                            ref: data.reference,
+                            callback: function(response) {
+                                // Verify payment on backend
+                                window.location.href = `/ads/${data.ad_id}/verify-payment/?reference=${response.reference}`;
+                            },
+                            onClose: function() {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = 'Create Advertisement';
+                                alert('Payment window closed. Your ad will not be processed until payment is completed.');
+                            }
+                        });
+                        handler.openIframe();
+                    } else {
+                        window.location.href = '{% url "core:ad_list" %}';
+                    }
+                } else {
+                    // Handle validation errors
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(([field, errors]) => {
+                            const input = form.querySelector(`[name="${field}"]`);
+                            if (input) {
+                                markFieldAsInvalid(input, errors[0]);
+                            }
+                        });
+                        // Scroll to first error
+                        const firstError = form.querySelector('.is-invalid');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Create Advertisement';
+            }
+        });
+
+        function markFieldAsInvalid(input, message) {
+            input.classList.add('is-invalid');
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = message;
+            input.parentNode.appendChild(feedback);
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    });
+
+    function selectPosition(position) {
+        document.querySelectorAll('.pricing-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelector(`#position${position.charAt(0).toUpperCase() + position.slice(1)}`).checked = true;
+        document.querySelector(`#position${position.charAt(0).toUpperCase() + position.slice(1)}`).closest('.pricing-card').classList.add('selected');
+    }
+
+    // Preview functionality
+    function updatePreview() {
+        const title = document.querySelector('[name="title"]').value;
+        const content = quill.root.innerHTML;
+        const previewTitle = document.querySelector('#previewTitle');
+        const previewContent = document.querySelector('#previewContent');
+        
+        if (previewTitle) previewTitle.textContent = title || 'Advertisement Title';
+        if (previewContent) previewContent.innerHTML = content || 'Advertisement content will appear here...';
+    }
+
+    // Update preview on input changes
+    document.querySelectorAll('input, textarea').forEach(input => {
+        input.addEventListener('input', updatePreview);
+    });
+
+    if (typeof quill !== 'undefined') {
+        quill.on('text-change', updatePreview);
+    }
+</script>
+{% endblock %} 

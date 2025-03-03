@@ -1,0 +1,130 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load custom_filters %}
+{% load currency_tags %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Browse Apps</h1>
+
+    <!-- Search and Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Search apps..." 
+                       value="{{ request.GET.search|default:'' }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if category.id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sort" class="form-select">
+                    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                    <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Apps Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for app in apps %}
+        <div class="col">
+            <div class="card h-100">
+                {% if app.image %}
+                    <img src="{{ app.image.url }}" class="card-img-top" alt="{{ app.name }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ app.name }}</h5>
+                    <p class="card-text">{{ app.description|truncatewords:30 }}</p>
+                    
+                    <!-- Price Display -->
+                    <p class="card-text">
+                        <strong>Share Price:</strong><br>
+                        {% if app.price_per_percentage %}
+                            {{ app.price_per_percentage|currency:user_currency }}
+                        {% else %}
+                            {% dual_currency app.price_per_percentage app.currency user_currency ngn_rate %}
+                        {% endif %}
+                    </p>
+
+                    <!-- App Stats -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-people"></i> {{ app.total_investors }} Investors
+                            <span class="mx-2">|</span>
+                            <i class="bi bi-graph-up"></i> {{ app.remaining_shares|intcomma }} Shares Available
+                        </small>
+                    </div>
+
+                    <!-- Category Tags -->
+                    <div class="mb-3">
+                        {% for category in app.categories.all %}
+                            <span class="badge bg-secondary me-1">{{ category.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'core:app_detail' app.id %}" class="btn btn-primary w-100">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No apps found matching your criteria.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if apps.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if apps.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">&laquo; First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ apps.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Previous</a>
+                </li>
+            {% endif %}
+
+            {% for num in apps.paginator.page_range %}
+                {% if apps.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > apps.number|add:'-3' and num < apps.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if apps.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ apps.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ apps.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Last &raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %} 

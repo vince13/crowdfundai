@@ -1,0 +1,257 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_head %}
+<meta charset="UTF-8">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ app.name }} - Revenue Analytics</h1>
+        <div>
+            <a href="{% url 'core:record_app_revenue' app.id %}" class="btn btn-primary me-2">
+                <i class="bi bi-plus-circle"></i> Record Revenue
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+            <a href="{% url 'core:revenue_export' app.id %}" class="btn btn-success">
+                <i class="bi bi-download"></i> Export
+            </a>
+        </div>
+    </div>
+    
+    <!-- Revenue Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2 class="card-text">&#8358;{{ total_revenue|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Revenue</h5>
+                    <h2 class="card-text">&#8358;{{ monthly_revenue|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Distributions</h5>
+                    <h2 class="card-text">&#8358;{{ pending_distributions|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Actions</h5>
+                    <button class="btn btn-primary btn-sm" onclick="processDistributions()">
+                        Process Distributions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Charts -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Revenue Trend</h5>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between align-items-center">
+                        Recent Distributions
+                        <span class="badge bg-secondary">{{ recent_distributions|length }}</span>
+                    </h5>
+                    <div class="mb-3">
+                        <a href="{% url 'core:app_shareholders' app.id %}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-people"></i> View Shareholders
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dist in recent_distributions %}
+                                <tr>
+                                    <td>{{ dist.distributed_at|date:"M d, Y" }}</td>
+                                    <td>&#8358;{{ dist.amount|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        <span class="badge {% if dist.status == 'COMPLETED' %}bg-success{% elif dist.status == 'FAILED' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ dist.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if dist.status == 'FAILED' %}
+                                        <button class="btn btn-sm btn-warning" onclick="retryDistribution('{{ dist.id }}')">
+                                            Retry
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4">No recent distributions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Revenue Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" name="start_date">
+                            <span class="input-group-text">to</span>
+                            <input type="date" class="form-control" name="end_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Revenue Type</label>
+                        <select class="form-select" name="revenue_type">
+                            <option value="">All Types</option>
+                            <option value="SUBSCRIPTION">Subscription</option>
+                            <option value="ONE_TIME">One-time Purchase</option>
+                            <option value="IN_APP">In-app Purchase</option>
+                            <option value="API_USAGE">API Usage</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels|safe }},
+            datasets: [{
+                label: 'Monthly Revenue (NGN)',
+                data: {{ monthly_data|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₦' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '₦' + context.raw.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+function processDistributions() {
+    if (confirm('Are you sure you want to process pending distributions?')) {
+        fetch('{% url "core:process_distributions" app.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Distributions processed successfully');
+                location.reload();
+            } else {
+                alert('Error processing distributions: ' + data.error);
+            }
+        });
+    }
+}
+
+function retryDistribution(distributionId) {
+    if (confirm('Retry this distribution?')) {
+        fetch(`{% url "core:retry_distribution" %}?id=${distributionId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Distribution retry initiated');
+                location.reload();
+            } else {
+                alert('Error retrying distribution: ' + data.error);
+            }
+        });
+    }
+}
+
+function applyFilters() {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+}
+</script>
+{% endblock %} 

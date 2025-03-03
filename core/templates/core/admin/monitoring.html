@@ -1,0 +1,256 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/monitoring.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <h1 class="h2 mb-4">System Monitoring</h1>
+
+    <!-- Alerts Section -->
+    {% if alerts %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Alerts</h5>
+                </div>
+                <div class="card-body">
+                    {% for alert in alerts %}
+                    <div class="alert alert-{{ alert.level }} mb-2">
+                        {{ alert.message }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Current Resource Usage -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">CPU Usage</h5>
+                    <div class="display-4" id="cpu-usage">{{ current_metrics.cpu.total_percent }}%</div>
+                    <small class="text-muted">Load Average: {{ current_metrics.cpu.load_avg.0 }}, {{ current_metrics.cpu.load_avg.1 }}, {{ current_metrics.cpu.load_avg.2 }}</small>
+                    <div class="mt-3">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Memory Usage</h5>
+                    <div class="display-4" id="memory-usage">{{ current_metrics.memory.percent }}%</div>
+                    <small class="text-muted">
+                        Available: {{ current_metrics.memory.available|filesizeformat }}/
+                        Total: {{ current_metrics.memory.total|filesizeformat }}
+                    </small>
+                    <div class="mt-3">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Disk Usage</h5>
+                    <div class="display-4" id="disk-usage">{{ current_metrics.disk.percent }}%</div>
+                    <small class="text-muted">
+                        Free: {{ current_metrics.disk.free|filesizeformat }}/
+                        Total: {{ current_metrics.disk.total|filesizeformat }}
+                    </small>
+                    <div class="mt-3">
+                        <canvas id="diskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Data -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Response Times</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="responseTimeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slow Queries -->
+    {% if historical_data.slow_queries %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Slow Queries</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Query</th>
+                                    <th>Time (ms)</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for query in historical_data.slow_queries %}
+                                <tr>
+                                    <td><code>{{ query.sql }}</code></td>
+                                    <td>{{ query.time|floatformat:2 }}</td>
+                                    <td>{{ query.timestamp }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize charts
+    const charts = {
+        cpu: new Chart(document.getElementById('cpuChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CPU Usage',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            }
+        }),
+        memory: new Chart(document.getElementById('memoryChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Memory Usage',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }]
+            }
+        }),
+        disk: new Chart(document.getElementById('diskChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Disk Usage',
+                    data: [],
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1
+                }]
+            }
+        }),
+        responseTime: new Chart(document.getElementById('responseTimeChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Average Response Time (ms)',
+                    data: [],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }]
+            }
+        })
+    };
+
+    function updateCharts(data) {
+        // Update resource usage charts
+        const timestamp = new Date().toLocaleTimeString();
+        
+        ['cpu', 'memory', 'disk'].forEach(metric => {
+            charts[metric].data.labels.push(timestamp);
+            charts[metric].data.datasets[0].data.push(data.current[metric].percent);
+            
+            // Keep last 20 data points
+            if (charts[metric].data.labels.length > 20) {
+                charts[metric].data.labels.shift();
+                charts[metric].data.datasets[0].data.shift();
+            }
+            
+            charts[metric].update();
+        });
+
+        // Update response time chart
+        charts.responseTime.data.labels = Object.keys(data.historical.response_times);
+        charts.responseTime.data.datasets[0].data = Object.values(data.historical.response_times).map(d => d.avg);
+        charts.responseTime.update();
+    }
+
+    // WebSocket connection
+    const monitoringSocket = new WebSocket(
+        (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + 
+        window.location.host + '/ws/monitoring/'
+    );
+
+    monitoringSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'metrics_update') {
+            // Update displays
+            document.querySelector('#cpu-usage').textContent = 
+                data.data.current.cpu.total_percent + '%';
+            document.querySelector('#memory-usage').textContent = 
+                data.data.current.memory.percent + '%';
+            document.querySelector('#disk-usage').textContent = 
+                data.data.current.disk.percent + '%';
+            
+            // Update charts
+            updateCharts(data.data);
+            
+            // Update alerts
+            updateAlerts(data.data.alerts);
+        }
+    };
+
+    monitoringSocket.onclose = function(e) {
+        console.error('Monitoring socket closed unexpectedly');
+        // Fallback to HTTP polling if WebSocket fails
+        setInterval(refreshMetrics, 5000);
+    };
+
+    function updateAlerts(alerts) {
+        const alertsContainer = document.querySelector('#alerts-container');
+        if (alertsContainer) {
+            alertsContainer.innerHTML = alerts.map(alert => `
+                <div class="alert alert-${alert.level} mb-2">
+                    ${alert.message}
+                </div>
+            `).join('');
+        }
+    }
+
+    // Initial data population remains the same
+    updateCharts({
+        current: {{ current_metrics|safe }},
+        historical: {{ historical_data|safe }}
+    });
+</script>
+{% endblock %}
+{% endblock %} 

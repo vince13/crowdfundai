@@ -1,0 +1,463 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load core_filters %}
+
+{% block meta_tags %}
+<meta name="description" content="{{ post.meta_description|default:post.get_formatted_excerpt }}">
+<meta name="keywords" content="{{ post.meta_keywords }}">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ post.social_title|default:post.get_formatted_title }}">
+<meta property="og:description" content="{{ post.social_description|default:post.get_formatted_excerpt }}">
+{% if post.featured_image %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.url }}">
+{% endif %}
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ post.social_title|default:post.get_formatted_title }}">
+<meta name="twitter:description" content="{{ post.social_description|default:post.get_formatted_excerpt }}">
+{% if post.featured_image %}
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.url }}">
+{% endif %}
+{% endblock %}
+
+{% block title %}{{ post.meta_title|default:post.get_formatted_title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <article class="blog-post text-white">
+                {% if post.featured_image %}
+                <!-- <img src="{{ post.featured_image.url }}" class="img-fluid rounded mb-4" alt="{{ post.get_formatted_title }}"> -->
+                <div class="featured-image-container mb-4">
+                    <img src="{{ post.featured_image.url }}" class="img-fluid rounded featured-image" alt="{{ post.get_formatted_title }}">
+                </div>
+                {% endif %}
+
+                <!-- Post Header -->
+                <header class="mb-4">
+                    <h1 class="display-4 mb-3 text-white">{{ post.get_formatted_title }}</h1>
+                    
+                    <!-- Post Meta Information -->
+                    <div class="d-flex flex-wrap align-items-center text-secondary mb-3">
+                        <div class="me-4">
+                            <i class="fas fa-user-circle me-2"></i>
+                            <a href="#author-bio" class="text-white text-decoration-none">{{ post.author.get_full_name|default:post.author.username }}</a>
+                        </div>
+                        <div class="me-4">
+                            <i class="fas fa-calendar me-2"></i>
+                            {{ post.published_at|date:"F j, Y" }}
+                        </div>
+                        <div class="me-4">
+                            <i class="fas fa-clock me-2"></i>
+                            {{ post.read_time }} min read
+                        </div>
+                        <div class="me-4">
+                            <i class="fas fa-eye me-2"></i>
+                            {{ post.view_count }} views
+                        </div>
+                    </div>
+                    
+                    <!-- Category Badge -->
+                    <div class="mb-3 d-flex align-items-center">
+                        <a href="{% url 'core:blog_list' %}?category={{ post.category.slug }}" 
+                           class="badge bg-primary text-white text-decoration-none py-2 px-3 fs-6">
+                            <i class="fas fa-folder me-2"></i>{{ post.category.name }}
+                        </a>
+                    </div>
+
+                    <!-- Share Buttons -->
+                    <div class="share-buttons mt-3">
+                        <h6 class="text-secondary mb-2">Share this article:</h6>
+                        <div class="d-flex gap-2">
+                            <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ post.get_formatted_title|urlencode }}" 
+                               target="_blank" class="btn btn-sm btn-outline-info">
+                                <i class="fab fa-twitter"></i> Tweet
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                               target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fab fa-facebook"></i> Share
+                            </a>
+                            <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.build_absolute_uri }}&title={{ post.get_formatted_title|urlencode }}" 
+                               target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="fab fa-linkedin"></i> Share
+                            </a>
+                            <button class="btn btn-sm btn-outline-light copy-link" 
+                                    data-url="{{ request.build_absolute_uri }}">
+                                <i class="fas fa-link"></i> Copy Link
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Post Content -->
+                <div class="blog-content mb-4 text-white">
+                    {{ post.get_formatted_content|safe|linebreaks }}
+                </div>
+
+                <!-- Tags Section -->
+                {% if post.meta_keywords %}
+                <div class="tags-section mb-5">
+                    <h6 class="text-secondary mb-3">Topics:</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for keyword in post.meta_keywords|split:"," %}
+                        <a href="{% url 'core:blog_list' %}?q={{ keyword|strip }}" 
+                           class="badge bg-secondary text-white text-decoration-none py-2 px-3">
+                            {{ keyword|strip }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Author Bio -->
+                <div id="author-bio" class="card bg-dark border-secondary mb-5">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if post.author.profile_picture %}
+                            <img src="{{ post.author.profile_picture.url }}" 
+                                 class="rounded-circle me-3" 
+                                 alt="{{ post.author.get_full_name }}"
+                                 style="width: 64px; height: 64px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle bg-secondary me-3 d-flex align-items-center justify-content-center"
+                                 style="width: 64px; height: 64px;">
+                                <i class="fas fa-user fa-2x text-white"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <h5 class="mb-1">{{ post.author.get_full_name|default:post.author.username }}</h5>
+                                <p class="text-secondary mb-0">
+                                    {% if post.author.role %}{{ post.author.role }}{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <p class="mb-0">{{ post.author.bio|default:"" }}</p>
+                    </div>
+                </div>
+
+                <!-- Related Posts -->
+                {% if related_posts %}
+                <div class="related-posts mb-5">
+                    <h4 class="mb-4">Related Articles</h4>
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        {% for related in related_posts %}
+                        <div class="col">
+                            <div class="card h-100 bg-dark border-secondary">
+                                {% if related.featured_image %}
+                                <img src="{{ related.featured_image.url }}" 
+                                     class="card-img-top" 
+                                     alt="{{ related.get_formatted_title }}"
+                                     style="height: 200px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="{{ related.get_absolute_url }}" 
+                                           class="text-white text-decoration-none">
+                                            {{ related.get_formatted_title }}
+                                        </a>
+                                    </h5>
+                                    <p class="card-text text-secondary">
+                                        {{ related.get_formatted_excerpt }}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-secondary">
+                                            <i class="fas fa-clock me-1"></i> {{ related.read_time }} min read
+                                        </small>
+                                        <small class="text-secondary">
+                                            <i class="fas fa-eye me-1"></i> {{ related.view_count }} views
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </article>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Author Info -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header bg-dark border-secondary">
+                    <h5 class="card-title mb-0 text-white">About the Author</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-white">{{ post.author.get_full_name|default:post.author.username }}</h6>
+                    <p class="text-secondary">
+                        {% if post.author.bio %}
+                            {{ post.author.bio }}
+                        {% else %}
+                            Author at AI Marketplace
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header bg-dark border-secondary py-3">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-folder-open me-2"></i>Categories
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        {% for category in categories %}
+                        <li class="mb-2">
+                            <a href="{% url 'core:blog_list' %}?category={{ category.slug }}" class="text-white text-decoration-none d-flex align-items-center py-2 px-3 rounded hover-bg">
+                                <i class="fas fa-angle-right me-2"></i>
+                                {{ category.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Popular Posts -->
+            <div class="card bg-dark border-secondary">
+                <div class="card-header bg-dark border-secondary py-3">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-fire me-2"></i>Popular Posts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for popular in popular_posts|slice:":5" %}
+                    <div class="popular-post-item mb-3 {% if not forloop.last %}border-bottom border-secondary pb-3{% endif %}">
+                        <h6 class="mb-2">
+                            <a href="{{ popular.get_absolute_url }}" class="text-white text-decoration-none hover-link">
+                                {{ popular.get_formatted_title }}
+                            </a>
+                        </h6>
+                        <div class="d-flex align-items-center text-secondary small">
+                            <i class="fas fa-eye me-2"></i>
+                            <span>{{ popular.view_count }} views</span>
+                            <i class="fas fa-calendar ms-3 me-2"></i>
+                            <span>{{ popular.published_at|date:"M j, Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Featured Image Container */
+    .featured-image-container {
+        width: 100%;
+        height: 400px;
+        overflow: hidden;
+        border-radius: 8px;
+        position: relative;
+    }
+    
+    .featured-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .blog-content {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #ffffff;
+    }
+
+    .blog-content h1, .blog-content h2, .blog-content h3, 
+    .blog-content h4, .blog-content h5, .blog-content h6 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    .blog-content h1 { font-size: 2.5rem; }
+    .blog-content h2 { font-size: 2rem; }
+    .blog-content h3 { font-size: 1.5rem; }
+    .blog-content h4 { font-size: 1.5rem; }
+    .blog-content h5 { font-size: 1.25rem; }
+    .blog-content h6 { font-size: 1.1rem; }
+
+    .blog-content p {
+        margin-bottom: 1.5rem;
+        text-align: justify;
+    }
+
+    .blog-content ul, .blog-content ol {
+        margin: 1.5rem 0;
+        padding-left: 2rem;
+    }
+
+    .blog-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .blog-content blockquote {
+        border-left: 4px solid #3498db;
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+        color: #e2e8f0;
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+
+    .blog-content pre {
+        background: #1a1e24;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin: 1.5rem 0;
+        border: 1px solid #2d3748;
+    }
+
+    .blog-content code {
+        font-family: 'Fira Code', monospace;
+        font-size: 0.9em;
+        padding: 0.2em 0.4em;
+        background: #1a1e24;
+        border-radius: 3px;
+        color: #e2e8f0;
+    }
+
+    .blog-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+    }
+
+    .blog-content a {
+        color: #60a5fa;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.2s;
+    }
+
+    .blog-content a:hover {
+        border-bottom-color: #60a5fa;
+    }
+
+    /* Category Badge */
+    .badge.bg-primary {
+        transition: all 0.3s ease;
+        background-color: #3498db !important;
+    }
+    .badge.bg-primary:hover {
+        background-color: #2980b9 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .btn-twitter { background-color: #1DA1F2; color: white; }
+    .btn-facebook { background-color: #4267B2; color: white; }
+    .btn-linkedin { background-color: #0077B5; color: white; }
+    .btn-twitter:hover, .btn-facebook:hover, .btn-linkedin:hover {
+        opacity: 0.9;
+        color: white;
+    }
+    
+    /* Sidebar Styles */
+    .hover-bg {
+        transition: all 0.3s ease;
+    }
+    .hover-bg:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+    }
+    .hover-link {
+        transition: color 0.3s ease;
+    }
+    .hover-link:hover {
+        color: #60a5fa !important;
+    }
+    .popular-post-item {
+        transition: transform 0.3s ease;
+    }
+    .popular-post-item:hover {
+        transform: translateX(5px);
+    }
+
+    /* Reading Progress Bar */
+    .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: #3498db;
+        z-index: 1000;
+        transition: width 0.2s ease;
+    }
+
+    /* Share Buttons */
+    .share-buttons .btn {
+        transition: all 0.3s ease;
+    }
+    .share-buttons .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Author Bio */
+    #author-bio {
+        transition: transform 0.3s ease;
+    }
+    #author-bio:hover {
+        transform: translateY(-5px);
+    }
+
+    /* Related Posts */
+    .related-posts .card {
+        transition: transform 0.3s ease;
+    }
+    .related-posts .card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Copy Link Button Functionality
+    const copyButtons = document.querySelectorAll('.copy-link');
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const url = this.dataset.url;
+            navigator.clipboard.writeText(url).then(() => {
+                // Change button text temporarily
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    this.innerHTML = originalHTML;
+                }, 2000);
+            });
+        });
+    });
+
+    // Track reading progress
+    const progressBar = document.createElement('div');
+    progressBar.className = 'reading-progress';
+    document.body.appendChild(progressBar);
+
+    window.addEventListener('scroll', () => {
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight - windowHeight;
+        const scrolled = window.scrollY;
+        const progress = (scrolled / documentHeight) * 100;
+        progressBar.style.width = progress + '%';
+    });
+});
+</script>
+{% endblock %} 

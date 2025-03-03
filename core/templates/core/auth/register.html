@@ -1,0 +1,53 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Register</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="form-group mb-4">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="terms_agreement" name="terms_agreement" required>
+                            <label class="form-check-label" for="terms_agreement">
+                                I agree to the <a href="{% url 'core:terms' %}" target="_blank">Terms of Service</a> and
+                                <a href="{% url 'core:privacy' %}" target="_blank">Privacy Policy</a>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="marketing_agreement" name="marketing_agreement">
+                            <label class="form-check-label" for="marketing_agreement">
+                                I agree to receive marketing communications (optional)
+                            </label>
+                        </div>
+                        <small class="text-muted mt-2 d-block">
+                            <i class="bi bi-info-circle me-1"></i>
+                            By registering, you acknowledge that you have read and understood our 
+                            <a href="{% url 'core:privacy' %}" target="_blank">Privacy Policy</a> and 
+                            <a href="{% url 'core:terms' %}" target="_blank">Terms of Service</a>.
+                        </small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                </form>
+                <div class="mt-3">
+                    <p class="mb-0 text-center">
+                        Already have an account? <a href="{% url 'core:login' %}">Login here</a>
+                    </p>
+                    <p class="text-muted small mt-2 text-center">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Forgot your password? You can <a href="{% url 'core:password_reset' %}">reset it here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

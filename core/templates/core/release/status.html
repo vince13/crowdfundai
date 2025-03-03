@@ -1,0 +1,218 @@
+{% extends "core/base.html" %}
+
+{% block title %}Process Release{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Process Release</h1>
+        <a href="{% url 'core:release_detail' release.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Details
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Processing Section -->
+        <div class="col-md-8">
+            <!-- Release Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Release Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Release ID:</dt>
+                        <dd class="col-sm-9">#{{ release.id }}</dd>
+
+                        <dt class="col-sm-3">App:</dt>
+                        <dd class="col-sm-9">
+                            <a href="{% url 'core:app_detail' release.transaction.app.id %}" class="text-decoration-none">
+                                {{ release.transaction.app.name }}
+                            </a>
+                        </dd>
+
+                        <dt class="col-sm-3">Amount:</dt>
+                        <dd class="col-sm-9">₦{{ release.amount }}</dd>
+
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-info">{{ release.get_status_display }}</span>
+                        </dd>
+
+                        <dt class="col-sm-3">Requested By:</dt>
+                        <dd class="col-sm-9">{{ release.requested_by.get_full_name|default:release.requested_by.username }}</dd>
+
+                        <dt class="col-sm-3">Approved By:</dt>
+                        <dd class="col-sm-9">{{ release.approved_by.get_full_name|default:release.approved_by.username }}</dd>
+
+                        <dt class="col-sm-3">Approval Date:</dt>
+                        <dd class="col-sm-9">{{ release.approval_date|date:"M d, Y H:i" }}</dd>
+
+                        <dt class="col-sm-3">Approval Notes:</dt>
+                        <dd class="col-sm-9">{{ release.approval_notes|default:"No notes provided" }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Developer Payment Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Developer Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    {% with payment_info=release.transaction.app.developer.payment_info %}
+                    {% if payment_info %}
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Payment Method:</dt>
+                            <dd class="col-sm-9">
+                                {{ payment_info.get_payment_method_display }}
+                                {% if payment_info.verified %}
+                                    <span class="badge bg-success ms-2">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning ms-2">{{ payment_info.get_verification_status_display }}</span>
+                                {% endif %}
+                            </dd>
+
+                            {% if payment_info.payment_method == 'bank_transfer' %}
+                                <dt class="col-sm-3">Bank Name:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.bank_name }}</dd>
+
+                                <dt class="col-sm-3">Account Name:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.account_name }}</dd>
+
+                                <dt class="col-sm-3">Account Number:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.account_number }}</dd>
+                            {% elif payment_info.payment_method == 'paystack' %}
+                                <dt class="col-sm-3">Bank Name:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.bank_name }}</dd>
+
+                                <dt class="col-sm-3">Account Name:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.account_name }}</dd>
+
+                                <dt class="col-sm-3">Account Number:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.account_number }}</dd>
+
+                                <dt class="col-sm-3">Email:</dt>
+                                <dd class="col-sm-9">{{ payment_info.account_details.email }}</dd>
+                            {% endif %}
+
+                            {% if payment_info.verified %}
+                                <dt class="col-sm-3">Verified By:</dt>
+                                <dd class="col-sm-9">{{ payment_info.verified_by.get_full_name }}</dd>
+
+                                <dt class="col-sm-3">Verified At:</dt>
+                                <dd class="col-sm-9">{{ payment_info.verified_at|date:"M d, Y H:i" }}</dd>
+                            {% endif %}
+                        </dl>
+                    {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Developer has not set up payment information yet.
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Processing Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Process Payment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Important:</strong> This action will initiate the fund transfer. Please verify all details before proceeding.
+                    </div>
+
+                    <form method="post" id="processForm">
+                        {% csrf_token %}
+                        
+                        <!-- Processing Checklist -->
+                        <div class="mb-4">
+                            <h6>Pre-Processing Checklist</h6>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="verifyAmount" required>
+                                <label class="form-check-label" for="verifyAmount">
+                                    I have verified the release amount
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="verifyAccount" required>
+                                <label class="form-check-label" for="verifyAccount">
+                                    I have confirmed the recipient's account details
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="verifyCompliance" required>
+                                <label class="form-check-label" for="verifyCompliance">
+                                    I confirm this release complies with all policies
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary" id="processBtn">
+                            <i class="fas fa-sync"></i> Process Release
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guidelines Sidebar -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Processing Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Before Processing</h6>
+                        <ul class="mb-0">
+                            <li>Verify bank account details are up to date</li>
+                            <li>Ensure sufficient funds in the escrow account</li>
+                            <li>Check for any last-minute holds or flags</li>
+                            <li>Verify compliance with daily transfer limits</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Processing Time</h6>
+                        <p class="mb-0">Transfers typically complete within 24 hours. Large amounts may require additional processing time.</p>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> Once initiated, this process cannot be reversed. Double-check all details before proceeding.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Enable submit button only when all checkboxes are checked
+    function updateProcessButton() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const processBtn = document.getElementById('processBtn');
+        processBtn.disabled = Array.from(checkboxes).some(cb => !cb.checked);
+    }
+
+    // Add event listeners to all checkboxes
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateProcessButton);
+    });
+
+    // Form submission confirmation
+    document.getElementById('processForm').addEventListener('submit', function(e) {
+        if (!confirm('Are you sure you want to process this release? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize button state
+    updateProcessButton();
+</script>
+{% endblock %}
+{% endblock %} 

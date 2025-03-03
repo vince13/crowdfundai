@@ -1,0 +1,28 @@
+{% extends "core/emails/base_email.html" %}
+
+{% block content %}
+<div style="padding: 20px; background-color: #ffffff; border-radius: 5px; margin: 20px 0;">
+    <h2 style="color: #28a745; margin-bottom: 20px;">App Approved!</h2>
+    
+    <p>Congratulations! Your app "{{ app.name }}" has been approved and is now listed on the FundAfrica AI-APP Marketplace.</p>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <p><strong>App Name:</strong> {{ app.name }}</p>
+        <p><strong>Category:</strong> {{ app.category }}</p>
+        <p><strong>Status:</strong> <span style="color: #28a745;">Active</span></p>
+    </div>
+    
+    <p>Your app is now visible to potential investors. You can track your app's performance and manage it through your dashboard.</p>
+    
+    <div style="margin: 30px 0;">
+        <a href="{{ site_url }}{% url 'core:app_detail' app.id %}" 
+           style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            View Your App
+        </a>
+    </div>
+    
+    <p style="color: #666; font-size: 0.9em;">
+        This is an automated message. Please do not reply to this email.
+    </p>
+</div>
+{% endblock %} 

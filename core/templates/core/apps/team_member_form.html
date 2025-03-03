@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Edit Team Member - {{ app.name }}
+    {% else %}
+        Add Team Member - {{ app.name }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}
+                            Edit Team Member - {{ app.name }}
+                        {% else %}
+                            Add Team Member - {{ app.name }}
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.role|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="custom-role-field" style="display: none;">
+                            {{ form.custom_role|as_crispy_field }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.github_profile|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.linkedin_profile|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        {{ form.bio|as_crispy_field }}
+                        {{ form.contribution_details|as_crispy_field }}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'core:app_detail' app.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to App
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> 
+                                {% if form.instance.pk %}
+                                    Update Team Member
+                                {% else %}
+                                    Add Team Member
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.querySelector('#id_role');
+    const customRoleDiv = document.querySelector('.custom-role-field');
+    
+    function toggleCustomRole() {
+        if (roleSelect.value === 'OTHER') {
+            customRoleDiv.style.display = 'block';
+        } else {
+            customRoleDiv.style.display = 'none';
+        }
+    }
+    
+    roleSelect.addEventListener('change', toggleCustomRole);
+    toggleCustomRole(); // Initial state
+});
+</script>
+{% endblock %} 

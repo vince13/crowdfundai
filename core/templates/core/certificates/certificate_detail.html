@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Certificate Details - {{ certificate.app.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Investment Certificate</h4>
+                    {% if is_admin and certificate.is_active %}
+                        <form method="post" action="{% url 'core:revoke_certificate' pk=certificate.pk %}" 
+                              onsubmit="return confirm('Are you sure you want to revoke this certificate? This action cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Revoke Certificate
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h3>{{ certificate.app.name }}</h3>
+                        <p class="text-muted">Certificate ID: {{ certificate.id }}</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Investment Details</h5>
+                            <dl class="row">
+                                <dt class="col-sm-6">Ownership Percentage</dt>
+                                <dd class="col-sm-6">{{ certificate.percentage_owned }}%</dd>
+
+                                <dt class="col-sm-6">Amount Invested</dt>
+                                <dd class="col-sm-6">₦{{ certificate.amount_invested|intcomma }}</dd>
+
+                                <dt class="col-sm-6">Issue Date</dt>
+                                <dd class="col-sm-6">{{ certificate.issue_date|date:"F j, Y" }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Verification</h5>
+                            <dl class="row">
+                                <dt class="col-sm-6">Status</dt>
+                                <dd class="col-sm-6">
+                                    {% if certificate.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-sm-6">Transaction Hash</dt>
+                                <dd class="col-sm-6">
+                                    <small class="text-muted">{{ certificate.transaction_hash }}</small>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-4">
+                        <h5>Verification Link</h5>
+                        <p class="text-muted">Share this link to verify certificate authenticity:</p>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" readonly
+                                   value="https://fundafrica.net/verify-certificate/{{ certificate.id }}/{{ certificate.transaction_hash }}">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyVerificationLink(this)">
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'core:download_certificate' pk=certificate.pk %}" 
+                           class="btn btn-primary">
+                            Download PDF Certificate
+                        </a>
+                        <a href="{% url 'core:certificate_list' %}" 
+                           class="btn btn-outline-primary ms-2">
+                            Back to Certificates
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyVerificationLink(button) {
+    const input = button.previousElementSibling;
+    input.select();
+    document.execCommand('copy');
+    
+    // Change button text temporarily
+    const originalText = button.innerText;
+    button.innerText = 'Copied!';
+    setTimeout(() => {
+        button.innerText = originalText;
+    }, 2000);
+}
+</script>
+{% endblock %} 

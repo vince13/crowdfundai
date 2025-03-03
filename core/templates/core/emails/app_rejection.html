@@ -1,0 +1,33 @@
+{% extends "core/emails/base_email.html" %}
+
+{% block content %}
+<div style="padding: 20px; background-color: #ffffff; border-radius: 5px; margin: 20px 0;">
+    <h2 style="color: #dc3545; margin-bottom: 20px;">App Requires Changes</h2>
+    
+    <p>Your app "{{ app.name }}" requires some changes before it can be approved for listing on the FundAfrica AI-APP Marketplace.</p>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <p><strong>App Name:</strong> {{ app.name }}</p>
+        <p><strong>Category:</strong> {{ app.category }}</p>
+        <p><strong>Status:</strong> <span style="color: #dc3545;">Changes Required</span></p>
+    </div>
+    
+    <div style="background-color: #fff3cd; border-left: 4px solid #dc3545; padding: 15px; margin: 15px 0;">
+        <h3 style="color: #333; margin-top: 0;">Feedback from Review:</h3>
+        <p style="white-space: pre-wrap;">{{ feedback }}</p>
+    </div>
+    
+    <p>Please make the requested changes and resubmit your app for review. If you have any questions about the feedback, please contact our support team.</p>
+    
+    <div style="margin: 30px 0;">
+        <a href="{{ site_url }}{% url 'core:app_detail' app.id %}" 
+           style="background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Edit Your App
+        </a>
+    </div>
+    
+    <p style="color: #666; font-size: 0.9em;">
+        This is an automated message. Please do not reply to this email.
+    </p>
+</div>
+{% endblock %} 

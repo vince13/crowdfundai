@@ -1,0 +1,82 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Investment Certificates{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Investment Certificates</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if certificates %}
+                <div class="row">
+                    {% for certificate in certificates %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ certificate.app.name }}</h5>
+                                    {% if is_admin %}
+                                        <p class="card-text text-muted">
+                                            <strong>Investor:</strong> {{ certificate.investor.get_full_name|default:certificate.investor.username }}
+                                        </p>
+                                    {% endif %}
+                                    <p class="card-text">
+                                        <strong>Ownership:</strong> {{ certificate.percentage_owned }}%<br>
+                                        <strong>Investment:</strong> ₦{{ certificate.amount_invested|intcomma }}<br>
+                                        <strong>Date:</strong> {{ certificate.issue_date|date:"F j, Y" }}<br>
+                                        <strong>Status:</strong> 
+                                        {% if certificate.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{% url 'core:certificate_detail' pk=certificate.pk %}" 
+                                           class="btn btn-primary">
+                                            View Details
+                                        </a>
+                                        {% if certificate.is_active %}
+                                            <a href="{% url 'core:download_certificate' pk=certificate.pk %}" 
+                                               class="btn btn-outline-primary">
+                                                Download PDF
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <small class="text-muted">
+                                        Certificate ID: {{ certificate.id }}<br>
+                                        Transaction: {{ certificate.transaction_hash|truncatechars:20 }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        {% if is_admin %}
+                            No certificates found in the system.
+                        {% else %}
+                            You don't have any investment certificates yet. 
+                            Start investing in apps to receive certificates!
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

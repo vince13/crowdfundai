@@ -1,0 +1,128 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/security.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Security Dashboard</h1>
+        <div class="btn-group">
+            <a href="{% url 'core:security_logs' %}" class="btn btn-outline-primary">
+                <i class="bi bi-list-ul"></i> View All Logs
+            </a>
+            <a href="{% url 'core:security_settings' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-gear"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Events</h5>
+                    <h2 class="mb-0">{{ stats.total_events }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Events (24h)</h5>
+                    <h2 class="mb-0">{{ stats.recent_events }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Failed Actions</h5>
+                    <h2 class="mb-0">{{ stats.failed_actions }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Unique IPs</h5>
+                    <h2 class="mb-0">{{ stats.unique_ips }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Event Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in event_distribution %}
+                                <tr>
+                                    <td>{{ event.action }}</td>
+                                    <td>{{ event.count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs|slice:":10" %}
+                                <tr>
+                                    <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                                    <td>{{ log.user|default:"Anonymous" }}</td>
+                                    <td>{{ log.action }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ log.status|yesno:'success,danger' }}">
+                                            {{ log.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/security.js' %}"></script>
+{% endblock %} 

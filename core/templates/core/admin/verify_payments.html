@@ -1,0 +1,116 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block title %}Payment Accounts - Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<style>
+.nav-tabs .nav-link.active {
+    background-color: #fff !important;
+    color: #000 !important;
+}
+</style>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Payment Accounts Management</h4>
+                    <div>
+                        <span class="badge bg-success me-2">{{ verified_accounts|length }} Verified</span>
+                        <span class="badge bg-warning me-2">{{ unverified_accounts|length }} Pending</span>
+                        <span class="badge bg-danger">{{ rejected_accounts|length }} Rejected</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs mb-4" id="paymentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active text-dark" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                                <i class="fas fa-clock me-2"></i>Pending Verification
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="verified-tab" data-bs-toggle="tab" data-bs-target="#verified" type="button" role="tab">
+                                <i class="fas fa-check-circle me-2"></i>Verified Accounts
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab">
+                                <i class="fas fa-times-circle me-2"></i>Rejected Accounts
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="paymentTabsContent">
+                        <!-- Pending Accounts Tab -->
+                        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+                    {% if unverified_accounts %}
+                        {% for account in unverified_accounts %}
+                                    {% include "core/admin/includes/payment_account_card.html" with account=account show_actions=True %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle text-success fs-1 mb-3"></i>
+                            <p class="text-muted mb-0">No pending payment accounts to verify.</p>
+                        </div>
+                    {% endif %}
+                        </div>
+
+                        <!-- Verified Accounts Tab -->
+                        <div class="tab-pane fade" id="verified" role="tabpanel">
+                            {% if verified_accounts %}
+                                {% for account in verified_accounts %}
+                                    {% include "core/admin/includes/payment_account_card.html" with account=account show_actions=False verified=True %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-info-circle text-info fs-1 mb-3"></i>
+                                    <p class="text-muted mb-0">No verified payment accounts yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Rejected Accounts Tab -->
+                        <div class="tab-pane fade" id="rejected" role="tabpanel">
+                            {% if rejected_accounts %}
+                                {% for account in rejected_accounts %}
+                                    {% include "core/admin/includes/payment_account_card.html" with account=account show_actions=True %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-ban text-danger fs-1 mb-3"></i>
+                                    <p class="text-muted mb-0">No rejected payment accounts.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize Bootstrap tabs
+    var triggerTabList = [].slice.call(document.querySelectorAll('#paymentTabs button'))
+    triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl)
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    })
+</script>
+{% endblock %} 

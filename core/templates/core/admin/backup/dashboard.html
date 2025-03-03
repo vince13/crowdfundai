@@ -1,0 +1,306 @@
+{% extends 'core/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .backup-card {
+        transition: transform 0.2s;
+    }
+    .backup-card:hover {
+        transform: translateY(-5px);
+    }
+    .backup-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .file-size {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2">Backup Management</h1>
+            <p class="text-muted mb-0">
+                <i class="bi bi-info-circle"></i> 
+                System retains the 7 most recent backups of each type for optimal storage management
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <form action="{% url 'core:create_backup' %}" method="POST" class="d-flex gap-2">
+                {% csrf_token %}
+                <select name="backup_type" class="form-select">
+                    <option value="full">Full Backup</option>
+                    <option value="db">Database Only</option>
+                    <option value="media">Media Files Only</option>
+                    <option value="config">Configuration Only</option>
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Backup
+                </button>
+            </form>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#backupScheduleModal">
+                <i class="bi bi-clock"></i> Schedule
+            </button>
+        </div>
+    </div>
+
+    <!-- Backup Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Last Backup</h6>
+                    <h5 class="card-title mb-0">{{ last_backup_time|default:"No backups yet" }}</h5>
+                    <div class="mt-2">
+                        <span class="badge {% if backup_status == 'success' %}bg-success{% elif backup_status == 'warning' %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ backup_status|default:"Unknown" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Verification Status</h6>
+                    <h5 class="card-title mb-0">
+                        {% if verification_status %}
+                            <i class="bi bi-check-circle text-success"></i> Verified
+                        {% else %}
+                            <i class="bi bi-x-circle text-danger"></i> Not Verified
+                        {% endif %}
+                    </h5>
+                    <small class="text-muted">Last checked: {{ last_verification_time|default:"Never" }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Integrity Check</h6>
+                    <h5 class="card-title mb-0">
+                        {% if integrity_status %}
+                            <i class="bi bi-shield-check text-success"></i> Passed
+                        {% else %}
+                            <i class="bi bi-shield-x text-danger"></i> Failed
+                        {% endif %}
+                    </h5>
+                    <small class="text-muted">Last checked: {{ last_integrity_check|default:"Never" }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Storage Usage</h6>
+                    <h5 class="card-title mb-0">{{ total_backup_size|filesizeformat }}</h5>
+                    <div class="progress mt-2" style="height: 5px;">
+                        <div class="progress-bar {% if storage_usage_percent > 80 %}bg-danger{% elif storage_usage_percent > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                             role="progressbar" style="width: {{ storage_usage_percent }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Backups -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Database Backups</h5>
+            <span class="badge bg-info">
+                {{ backups.database|length }}/7 backups stored
+            </span>
+        </div>
+        <div class="card-body">
+            {% if backups.database %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Created</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups.database %}
+                            <tr>
+                                <td>{{ backup.filename }}</td>
+                                <td>{{ backup.created|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ backup.size|filesizeformat }}</td>
+                                <td>
+                                    <div class="backup-actions">
+                                        <form action="{% url 'core:restore_backup' 'db' backup.filename %}" method="POST" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning btn-sm" 
+                                                    onclick="return confirm('Are you sure you want to restore this backup? This will overwrite current data.')">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                            </button>
+                                        </form>
+                                        <a href="{{ backup.path }}" class="btn btn-info btn-sm" download>
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No database backups available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Media Backups -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Media Backups</h5>
+            <span class="badge bg-info">
+                {{ backups.media|length }}/7 backups stored
+            </span>
+        </div>
+        <div class="card-body">
+            {% if backups.media %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Created</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups.media %}
+                            <tr>
+                                <td>{{ backup.filename }}</td>
+                                <td>{{ backup.created|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ backup.size|filesizeformat }}</td>
+                                <td>
+                                    <div class="backup-actions">
+                                        <form action="{% url 'core:restore_backup' 'media' backup.filename %}" method="POST" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning btn-sm"
+                                                    onclick="return confirm('Are you sure you want to restore this backup? This will overwrite current media files.')">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                            </button>
+                                        </form>
+                                        <a href="{{ backup.path }}" class="btn btn-info btn-sm" download>
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No media backups available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Configuration Backups -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Configuration Backups</h5>
+            <span class="badge bg-info">
+                {{ backups.config|length }}/7 backups stored
+            </span>
+        </div>
+        <div class="card-body">
+            {% if backups.config %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Created</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups.config %}
+                            <tr>
+                                <td>{{ backup.filename }}</td>
+                                <td>{{ backup.created|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ backup.size|filesizeformat }}</td>
+                                <td>
+                                    <div class="backup-actions">
+                                        <form action="{% url 'core:restore_backup' 'config' backup.filename %}" method="POST" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning btn-sm"
+                                                    onclick="return confirm('Are you sure you want to restore this configuration? This will modify system settings.')">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                            </button>
+                                        </form>
+                                        <a href="{{ backup.path }}" class="btn btn-info btn-sm" download>
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No configuration backups available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Backup Schedule Modal -->
+<div class="modal fade" id="backupScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Backup Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="backupScheduleForm">
+                    <div class="mb-3">
+                        <label class="form-label">Database Backup Schedule</label>
+                        <input type="text" class="form-control" value="0 0 * * *" readonly>
+                        <small class="text-muted">Daily at midnight</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Verification Check</label>
+                        <input type="text" class="form-control" value="0 1 * * *" readonly>
+                        <small class="text-muted">Daily at 1 AM</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Integrity Check</label>
+                        <input type="text" class="form-control" value="0 2 * * *" readonly>
+                        <small class="text-muted">Daily at 2 AM</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Retention Period</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" value="{{ backup_retention_days }}" min="1" max="365">
+                            <span class="input-group-text">days</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

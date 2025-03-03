@@ -1,0 +1,41 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Test Fee Collection - {{ app.name }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>Test Information</h5>
+                <p class="mb-0">This will simulate complete funding of the app and trigger the platform fee collection process.</p>
+            </div>
+
+            <dl class="row mb-4">
+                <dt class="col-sm-3">App Name</dt>
+                <dd class="col-sm-9">{{ app.name }}</dd>
+
+                <dt class="col-sm-3">Funding Goal</dt>
+                <dd class="col-sm-9">₦{{ app.funding_goal|floatformat:2 }}</dd>
+
+                <dt class="col-sm-3">Expected Platform Fee (5%)</dt>
+                <dd class="col-sm-9">₦{{ app.calculate_platform_fee|floatformat:2 }}</dd>
+
+                <dt class="col-sm-3">Developer Amount</dt>
+                <dd class="col-sm-9">₦{{ developer_amount|floatformat:2 }}</dd>
+            </dl>
+
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-play me-2"></i>Test Fee Collection
+                </button>
+                <a href="{% url 'core:app_detail' app.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to App
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

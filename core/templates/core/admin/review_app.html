@@ -1,0 +1,244 @@
+{% extends 'core/admin/base.html' %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+{% block title %}Review App: {{ app.name }}{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1>Review App: {{ app.name }}</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- App Details -->
+        <div class="card mb-4 bg-dark text-white">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="card-title mb-0">App Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Developer</dt>
+                    <dd class="col-sm-9">{{ app.developer.username }}</dd>
+
+                    <dt class="col-sm-3">Description</dt>
+                    <dd class="col-sm-9">{{ app.description }}</dd>
+
+                    <dt class="col-sm-3">AI Features</dt>
+                    <dd class="col-sm-9">{{ app.ai_features }}</dd>
+
+                    <dt class="col-sm-3">Funding Goal</dt>
+                    <dd class="col-sm-9">₦{{ app.funding_goal|intcomma }}</dd>
+
+                    <dt class="col-sm-3">Price per 1% Equity</dt>
+                    <dd class="col-sm-9">₦{{ app.price_per_percentage|intcomma }}</dd>
+
+                    <dt class="col-sm-3">Total Shares</dt>
+                    <dd class="col-sm-9">{{ app.total_shares|intcomma }}</dd>
+
+                    <dt class="col-sm-3">Equity Offered</dt>
+                    <dd class="col-sm-9">{{ app.equity_percentage }}%</dd>
+
+                    <dt class="col-sm-3">Company Valuation</dt>
+                    <dd class="col-sm-9">₦{{ app.get_company_valuation|floatformat:2|intcomma }}</dd>
+
+                    <dt class="col-sm-3">Retained Shares</dt>
+                    <dd class="col-sm-9">{{ app.get_retained_shares|intcomma }}</dd>
+
+                    {% if app.github_url %}
+                        <dt class="col-sm-3">GitHub</dt>
+                        <dd class="col-sm-9">
+                            <a href="{{ app.github_url }}" target="_blank" class="text-white">{{ app.github_url }}</a>
+                        </dd>
+                    {% endif %}
+
+                    {% if app.demo_url %}
+                        <dt class="col-sm-3">Demo</dt>
+                        <dd class="col-sm-9">
+                            <a href="{{ app.demo_url }}" target="_blank" class="text-white">{{ app.demo_url }}</a>
+                        </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Project Milestones -->
+        <div class="card mb-4 bg-dark text-white">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Project Milestones</h5>
+                <a href="{% url 'core:milestone_samples' %}" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-lightbulb"></i> View Milestone Guidelines
+                </a>
+            </div>
+            <div class="card-body">
+                {% if app.milestones.exists %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Target Date</th>
+                                    <th>Release %</th>
+                                    <th>Deliverables</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for milestone in app.milestones.all %}
+                                <tr>
+                                    <td>{{ milestone.title }}</td>
+                                    <td>{{ milestone.description|truncatechars:100 }}</td>
+                                    <td>{{ milestone.target_date|date:"M d, Y" }}</td>
+                                    <td>{{ milestone.release_percentage }}%</td>
+                                    <td>
+                                        {% if milestone.deliverables.exists %}
+                                            <button type="button" class="btn btn-sm btn-outline-light" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deliverablesModal{{ milestone.id }}">
+                                                View ({{ milestone.deliverables.count }})
+                                            </button>
+
+                                            <!-- Deliverables Modal -->
+                                            <div class="modal fade" id="deliverablesModal{{ milestone.id }}" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content bg-dark text-white">
+                                                        <div class="modal-header border-secondary">
+                                                            <h5 class="modal-title">Deliverables for {{ milestone.title }}</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <ul class="list-group">
+                                                                {% for deliverable in milestone.deliverables.all %}
+                                                                <li class="list-group-item bg-dark text-white border-secondary">
+                                                                    <h6 class="mb-1">{{ deliverable.title }}</h6>
+                                                                    <p class="mb-1">{{ deliverable.description }}</p>
+                                                                    {% if deliverable.evidence_link %}
+                                                                        <a href="{{ deliverable.evidence_link }}" target="_blank" class="btn btn-sm btn-outline-light">
+                                                                            <i class="fas fa-external-link-alt"></i> View Evidence
+                                                                        </a>
+                                                                    {% endif %}
+                                                                </li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">No deliverables</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Release Percentage:</strong></td>
+                                    <td colspan="2">
+                                        <strong>
+                                            {{ milestone_total }}%
+                                            {% if milestone_total != 100 %}
+                                                <span class="badge bg-danger ms-2">Should be 100%</span>
+                                            {% endif %}
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No milestones have been defined for this app.
+                        This is required before the app can be approved.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Review Form -->
+        <div class="card bg-dark text-white">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="card-title mb-0">Review Decision</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <!-- Key Metrics Summary -->
+                    <div class="mb-4 border-bottom border-secondary pb-3">
+                        <h6 class="mb-3">Key Metrics for Approval</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label small">Available Percentage</label>
+                                    <input type="number" class="form-control form-control-sm bg-dark text-white" 
+                                           name="available_percentage" value="{{ app.available_percentage }}" 
+                                           step="0.01" min="1" max="100" required>
+                                    <small class="text-muted">Total % available for funding</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label small">Remaining Percentage</label>
+                                    <input type="number" class="form-control form-control-sm bg-dark text-white" 
+                                           name="remaining_percentage" value="{{ app.remaining_percentage }}" 
+                                           step="0.01" min="0" max="100" readonly>
+                                    <small class="text-muted">% still available</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label small">Min Investment %</label>
+                                    <input type="number" class="form-control form-control-sm bg-dark text-white" 
+                                           name="min_investment_percentage" value="{{ app.min_investment_percentage }}" 
+                                           step="0.01" min="1" required>
+                                    <small class="text-muted">Minimum % that can be purchased</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label class="form-label small">Price per 1%</label>
+                                    <input type="number" class="form-control form-control-sm bg-dark text-white" 
+                                           name="price_per_percentage" value="{{ app.price_per_percentage }}" 
+                                           step="0.01" min="0.01" required>
+                                    <small class="text-muted">Price for 1% equity (₦)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="alert alert-info bg-dark border-info text-white small">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Company Valuation: ₦{{ app.get_company_valuation|floatformat:2|intcomma }}
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmValues" name="confirm_values" required>
+                                <label class="form-check-label small" for="confirmValues">
+                                    I confirm these values are correct for app approval
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="feedback" class="form-label">Feedback</label>
+                        <textarea class="form-control bg-dark text-white" id="feedback" name="feedback" rows="4" 
+                                 placeholder="Provide feedback for the developer..."></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="approve" 
+                                class="btn btn-success">Approve App</button>
+                        <button type="submit" name="action" value="reject" 
+                                class="btn btn-danger">Reject App</button>
+                        <a href="{% url 'core:admin_pending_apps' %}" 
+                           class="btn btn-outline-light">Back to List</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

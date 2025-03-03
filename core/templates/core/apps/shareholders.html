@@ -1,0 +1,103 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ app.name }} - Shareholders</h1>
+        <div>
+            <a href="{% url 'core:app_detail' app.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to App
+            </a>
+            <a href="#" class="btn btn-success" onclick="exportToCSV()">
+                <i class="bi bi-download"></i> Export
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Shareholders</h5>
+                    <h2>{{ shareholders|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Shares Distributed</h5>
+                    <h2>{{ total_shares_distributed|floatformat:2 }}%</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Remaining Shares</h5>
+                    <h2>{{ app.remaining_percentage|floatformat:2 }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shareholders Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Shareholder</th>
+                            <th>Email</th>
+                            <th>Shares Owned</th>
+                            <th>Investment Amount</th>
+                            <th>Current Value</th>
+                            <th>Investment Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shareholder in shareholders %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'core:profile' shareholder.user.id %}">
+                                    {{ shareholder.user.get_full_name|default:shareholder.user.username }}
+                                </a>
+                            </td>
+                            <td>{{ shareholder.user.email }}</td>
+                            <td>{{ shareholder.percentage_owned|floatformat:2 }}%</td>
+                            <td>₦{{ shareholder.amount_paid|floatformat:2|intcomma }}</td>
+                            <td>₦{{ shareholder.current_value|floatformat:2|intcomma }}</td>
+                            <td>{{ shareholder.investment_date|date:"M d, Y"|default:"N/A" }}</td>
+                            <td>
+                                {% if shareholder.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No shareholders found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportToCSV() {
+    window.location.href = "{% url 'core:export_shareholders' app.id %}";
+}
+</script>
+{% endblock %} 

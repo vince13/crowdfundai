@@ -1,0 +1,637 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ app.name }} - Pitch Deck</h1>
+        <div class="d-flex gap-2">
+            {% if user == app.developer %}
+            <a href="{% url 'core:pitch_deck_edit' app.id %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Edit Pitch Deck
+            </a>
+            
+            {% if has_paid_subscription %}
+                {% if can_trigger_analysis %}
+                <button id="triggerAnalysisBtn" class="btn btn-success">
+                    <i class="bi bi-robot"></i> Run AI Analysis
+                </button>
+                {% elif pitch_deck.ai_analysis_status == 'IN_PROGRESS' %}
+                <button class="btn btn-secondary" disabled>
+                    <i class="bi bi-hourglass-split"></i> Analysis in Progress...
+                </button>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'core:subscription_plans' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-star"></i> Upgrade for AI Analysis
+                </a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if pitch_deck.ai_analysis_error %}
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> AI Analysis Error</h5>
+        <p class="mb-0">{{ pitch_deck.ai_analysis_error }}</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- File Uploads Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Presentation & Media</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% if pitch_deck.presentation_file %}
+                <div class="col-md-6 mb-3">
+                    <h6>Pitch Deck Presentation</h6>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>
+                        <a href="{{ pitch_deck.presentation_file.url }}" target="_blank" class="text-decoration-none">
+                            View Presentation
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if pitch_deck.team_photo %}
+                <div class="col-md-6 mb-3">
+                    <h6>Team Photo</h6>
+                    <img src="{{ pitch_deck.team_photo.url }}" alt="Team Photo" class="img-fluid rounded">
+                </div>
+                {% endif %}
+            </div>
+
+            {% if pitch_deck.product_screenshots %}
+            <div class="mt-3">
+                <h6>Product Screenshots</h6>
+                <div class="row">
+                    {% for screenshot in pitch_deck.product_screenshots %}
+                    <div class="col-md-4 mb-3">
+                        <img src="{{ screenshot }}" alt="Screenshot {{ forloop.counter }}" class="img-fluid rounded">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Problem & Solution Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Problem & Solution</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Problem Statement</h6>
+                <p class="mb-0">{{ pitch_deck.problem_statement }}</p>
+            </div>
+            <div>
+                <h6>Solution Overview</h6>
+                <p class="mb-0">{{ pitch_deck.solution_overview }}</p>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Market Analysis Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Market Analysis</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Market Size</h6>
+                <div class="row">
+                    {% with market_size=pitch_deck.market_size %}
+                <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">TAM</h6>
+                                <p class="card-text">{{ market_size.TAM }}</p>
+                            </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">SAM</h6>
+                                <p class="card-text">{{ market_size.SAM }}</p>
+                            </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">SOM</h6>
+                                <p class="card-text">{{ market_size.SOM }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+            <div>
+                <h6>Target Audience</h6>
+                {% with target=pitch_deck.target_audience %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="h6">Segments</h6>
+                        <ul class="list-unstyled">
+                            {% for segment in target.segments %}
+                            <li>{{ segment }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="h6">Demographics</h6>
+                        <ul class="list-unstyled">
+                            {% for key, value in target.demographics.items %}
+                            <li><strong>{{ key }}:</strong> {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Product Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Product</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Key Features</h6>
+                {% with features=pitch_deck.product_features %}
+                <div class="row">
+                    {% for feature, details in features.items %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ feature }}</h6>
+                                <p class="card-text">{{ details.description }}</p>
+                                {% if details.benefits %}
+                                <h6 class="mt-2">Benefits:</h6>
+                                <ul class="mb-0">
+                                    {% for benefit in details.benefits %}
+                                    <li>{{ benefit }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+
+            {% if pitch_deck.product_demo %}
+            <div class="mb-4">
+                <h6>Product Demo</h6>
+                <a href="{{ pitch_deck.product_demo }}" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-play-circle me-2"></i>Watch Demo
+                </a>
+            </div>
+            {% endif %}
+
+            <div>
+                <h6>Product Roadmap</h6>
+                {% with roadmap=pitch_deck.product_roadmap %}
+                <div class="timeline">
+                    {% for phase in roadmap %}
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6>{{ phase.phase }}</h6>
+                            <ul>
+                                {% for feature in phase.features %}
+                                <li>{{ feature }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Business Model Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Business Model</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Revenue Streams</h6>
+                {% with streams=pitch_deck.revenue_streams %}
+                <div class="row">
+                    {% for stream, details in streams.items %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ stream }}</h6>
+                                <p><strong>Type:</strong> {{ details.type }}</p>
+                                <p><strong>Projected Revenue:</strong> {{ details.projected_revenue }}</p>
+                                <p class="mb-0"><strong>Timeline:</strong> {{ details.timeline }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+
+            <div>
+                <h6>Pricing Strategy</h6>
+                {% with pricing=pitch_deck.pricing_strategy %}
+                <div class="row">
+                    {% for plan in pricing.plans %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ plan.name }}</h6>
+                                <p class="h4 mb-3">{{ plan.price }}</p>
+                                <ul class="list-unstyled mb-0">
+                                    {% for feature in plan.features %}
+                                    <li><i class="bi bi-check2 text-success me-2"></i>{{ feature }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Traction & Metrics Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Traction & Metrics</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Current Traction</h6>
+                {% with traction=pitch_deck.current_traction %}
+            <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Users</h6>
+                                <p class="h4 mb-0">{{ traction.users }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Revenue</h6>
+                                <p class="h4 mb-0">{{ traction.revenue }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Growth Rate</h6>
+                                <p class="h4 mb-0">{{ traction.growth_rate }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            </div>
+
+            <div>
+                <h6>Key Metrics</h6>
+                {% with metrics=pitch_deck.key_metrics %}
+                <div class="row">
+                    {% for metric, data in metrics.items %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ metric }}</h6>
+                                <p><strong>Current:</strong> {{ data.current }}</p>
+                                <p><strong>Target:</strong> {{ data.target }}</p>
+                                <p class="mb-0"><strong>Timeline:</strong> {{ data.timeline }}</p>
+                            </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endwith %}
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Team Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Team</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Team Members</h6>
+                {% with team=pitch_deck.team_members %}
+                <div class="row">
+                    {% for member in team %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ member.name }}</h6>
+                                <p><strong>Role:</strong> {{ member.role }}</p>
+                                <p><strong>Experience:</strong> {{ member.experience }}</p>
+                                {% if member.linkedin %}
+                                <a href="{{ member.linkedin }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-linkedin me-2"></i>LinkedIn
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+
+            {% if pitch_deck.advisors %}
+            <div>
+                <h6>Advisors</h6>
+                {% with advisors=pitch_deck.advisors %}
+                <div class="row">
+                    {% for advisor in advisors %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ advisor.name }}</h6>
+                                <p><strong>Expertise:</strong> {{ advisor.expertise }}</p>
+                                {% if advisor.linkedin %}
+                                <a href="{{ advisor.linkedin }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-linkedin me-2"></i>LinkedIn
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+            {% endif %}
+        </div>
+    </div> -->
+
+    <!-- Competition Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Competition</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Competitive Analysis</h6>
+                {% with competitors=pitch_deck.competitive_analysis %}
+                <div class="row">
+                    {% for competitor, details in competitors.items %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ competitor }}</h6>
+                                {% if details.market_share %}
+                                <p><strong>Market Share:</strong> {{ details.market_share }}</p>
+                                {% endif %}
+                                {% if details.strengths %}
+                                <h6 class="mt-3">Strengths:</h6>
+                                <ul>
+                                    {% for strength in details.strengths %}
+                                    <li>{{ strength }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                {% if details.weaknesses %}
+                                <h6 class="mt-3">Weaknesses:</h6>
+                                <ul class="mb-0">
+                                    {% for weakness in details.weaknesses %}
+                                    <li>{{ weakness }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+
+            <div>
+                <h6>Unique Advantages</h6>
+                <p class="mb-0">{{ pitch_deck.unique_advantages }}</p>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Financial Projections Section -->
+    <!-- <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Financial Projections</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h6>Financial Projections</h6>
+                {% with projections=pitch_deck.financial_projections %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Revenue</th>
+                                <th>Expenses</th>
+                                <th>Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for year, data in projections.items %}
+                            <tr>
+                                <td>{{ year }}</td>
+                                <td>{{ data.revenue }}</td>
+                                <td>{{ data.expenses }}</td>
+                                <td>{{ data.profit }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endwith %}
+            </div>
+
+            <div>
+                <h6>Funding Requirements</h6>
+                {% with funding=pitch_deck.funding_requirements %}
+                <p><strong>Total Required:</strong> {{ funding.total }}</p>
+                <h6 class="mt-3">Use of Funds:</h6>
+                <div class="row">
+                    {% for category, percentage in funding.breakdown.items %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ category|title }}</h6>
+                                <p class="h4 mb-0">{{ percentage }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div> -->
+
+    {% if app.ai_assessment and pitch_deck.ai_analysis_status == 'COMPLETED' %}
+    <!-- AI Assessment Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">AI Assessment Results</h5>
+        </div>
+        <div class="card-body">
+            <!-- Overall Score -->
+            <div class="mb-4">
+                <h6>Overall Score</h6>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ app.ai_assessment.overall_score }}%;"
+                         aria-valuenow="{{ app.ai_assessment.overall_score }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                        {{ app.ai_assessment.overall_score }}%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Scores -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <h6>Innovation Score</h6>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {{ app.ai_assessment.innovation_score }}%">
+                            {{ app.ai_assessment.innovation_score }}%
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Market Potential</h6>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" role="progressbar" 
+                             style="width: {{ app.ai_assessment.market_potential_score }}%">
+                            {{ app.ai_assessment.market_potential_score }}%
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Execution Capability</h6>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" role="progressbar" 
+                             style="width: {{ app.ai_assessment.execution_capability_score }}%">
+                            {{ app.ai_assessment.execution_capability_score }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights -->
+            <div class="mt-4">
+                <h6>AI Insights</h6>
+                <p class="text-muted">{{ app.ai_assessment.ai_insights }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 30px;
+}
+
+.timeline-badge {
+    position: absolute;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #007bff;
+}
+
+.timeline-content {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const analysisBtn = document.getElementById('triggerAnalysisBtn');
+    if (analysisBtn) {
+        analysisBtn.addEventListener('click', function() {
+            // Disable button and show loading state
+            analysisBtn.disabled = true;
+            analysisBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Analyzing...';
+            
+            // Make AJAX request to trigger analysis
+            fetch('{% url "core:trigger_ai_analysis" app.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Reload page to show results
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                // Show error message
+                const alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Error!</strong> ${error.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                analysisBtn.insertAdjacentHTML('beforebegin', alertHtml);
+                
+                // Reset button state
+                analysisBtn.disabled = false;
+                analysisBtn.innerHTML = '<i class="bi bi-robot"></i> Run AI Analysis';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 

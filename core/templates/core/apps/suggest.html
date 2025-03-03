@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Suggest an AI App{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Suggest an AI App</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">Suggest an AI App for Development</h5>
+                        <p class="mb-0">Have a great idea for an AI application? Share it with our community! The most popular suggestions will be considered for development.</p>
+                        <ul class="mt-2 mb-0">
+                            <li>Describe your app idea clearly and its potential impact</li>
+                            <li>Explain how AI/ML would be used in the application</li>
+                            <li>Consider market potential and target users</li>
+                            <li>Be specific about technical requirements if possible</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <h4 class="mb-3">Basic Information</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.category|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- AI Features -->
+                        <h4 class="mb-3 mt-4">AI Features</h4>
+                        <div class="row">
+                            <div class="col-md-12">
+                                {{ form.ai_features|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Hidden fields for community suggestions -->
+                        <input type="hidden" name="funding_goal" value="1000">
+                        <input type="hidden" name="equity_percentage" value="1">
+                        <input type="hidden" name="available_percentage" value="1">
+                        <input type="hidden" name="min_investment_percentage" value="1">
+                        <input type="hidden" name="price_per_percentage" value="0.01">
+                        <input type="hidden" name="listing_type" value="COMMUNITY">
+                        <input type="hidden" name="currency" value="NGN">
+                        <input type="hidden" name="funding_round" value="PRESEED">
+                        <input type="hidden" name="round_number" value="1">
+                        <input type="hidden" name="lock_in_period" value="30">
+                        <input type="hidden" name="funding_end_date" value="{{ today|date:'Y-m-d' }}">
+                        <input type="hidden" name="use_of_funds" value='{"development": 100}'>
+                        <!-- Add missing required fields -->
+                        <input type="hidden" name="development_stage" value="CONCEPT">
+                        <input type="hidden" name="project_status" value="PENDING">
+                        <input type="hidden" name="progress" value="0">
+
+                        <div class="alert alert-warning mt-4">
+                            <strong>Note:</strong>
+                            <ul class="mb-0">
+                                <li>Your suggestion will be reviewed by our team</li>
+                                <li>Community members can vote on suggestions</li>
+                                <li>Popular suggestions may be selected for development</li>
+                                <li>You'll be notified of any updates to your suggestion</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Submit Suggestion</button>
+                            <a href="{% url 'core:app_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

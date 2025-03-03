@@ -1,0 +1,157 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <a href="{% url 'core:moderation_report_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Report Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Report Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Report ID</dt>
+                        <dd class="col-sm-9">#{{ report.id }}</dd>
+
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-{{ report.status|lower }}">
+                                {{ report.get_status_display }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-3">Reporter</dt>
+                        <dd class="col-sm-9">{{ report.reporter.username }}</dd>
+
+                        <dt class="col-sm-3">Reason</dt>
+                        <dd class="col-sm-9">{{ report.get_reason_display }}</dd>
+
+                        <dt class="col-sm-3">Description</dt>
+                        <dd class="col-sm-9">{{ report.description }}</dd>
+
+                        <dt class="col-sm-3">Reported At</dt>
+                        <dd class="col-sm-9">{{ report.created_at }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Reported Content -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Reported Content</h5>
+                </div>
+                <div class="card-body">
+                    <div class="content-preview">
+                        {{ content_object }}
+                        <a href="{{ content_object.get_absolute_url }}" class="btn btn-sm btn-primary mt-3" target="_blank">
+                            View Full Content
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moderation Form -->
+            {% if report.status == 'PENDING' %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Take Action</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Moderation Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" required></textarea>
+                            </div>
+                            <div class="btn-group">
+                                <button type="submit" name="action" value="APPROVE" class="btn btn-success">
+                                    Approve Report
+                                </button>
+                                <button type="submit" name="action" value="REJECT" class="btn btn-danger">
+                                    Reject Report
+                                </button>
+                                <button type="submit" name="action" value="RESOLVE" class="btn btn-primary">
+                                    Mark as Resolved
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Moderation History -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Moderation History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for log in moderation_history %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-0">{{ log.get_action_display }}</h6>
+                                    <small class="text-muted">
+                                        {{ log.created_at|timesince }} ago by {{ log.moderator.username }}
+                                    </small>
+                                    {% if log.notes %}
+                                        <p class="mt-2 mb-0">{{ log.notes }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">No moderation history available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        margin-bottom: 20px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 2px solid #fff;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 12px;
+        bottom: -20px;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item:last-child::before {
+        display: none;
+    }
+</style>
+{% endblock %} 

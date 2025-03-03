@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h3 mb-0">Contact Us</h1>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="subject" name="subject" 
+                                   value="{{ initial_subject }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h4>Advertising Inquiries</h4>
+                    <p>
+                        Interested in advertising on our platform? We offer various advertising positions 
+                        to help you reach our engaged audience of AI developers and investors.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> <span class="text-secondary">Main content area placement</span></li>
+                        <li><i class="fas fa-check text-success"></i> <span class="text-secondary">Sidebar premium spots</span></li>
+                        <li><i class="fas fa-check text-success"></i> <span class="text-secondary">Flexible duration options</span></li>
+                        <li><i class="fas fa-check text-success"></i> <span class="text-secondary">Detailed performance analytics</span></li>
+                    </ul>
+                    <p class="mb-0">
+                        For advertising rates and availability, please include "Advertising Inquiry" 
+                        in your message subject.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

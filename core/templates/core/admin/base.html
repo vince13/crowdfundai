@@ -1,0 +1,238 @@
+{% extends 'core/base.html' %}
+
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/admin.css' %}">
+<style>
+    /* Custom styles for admin layout */
+    .admin-container {
+        margin-top: 20px;
+        min-height: calc(100vh - 70px - 20px - 60px); /* viewport height - navbar - top margin - footer */
+        padding-bottom: 40px; /* Space for footer */
+    }
+    
+    .sidebar {
+        position: fixed;
+        top: 70px;
+        bottom: 60px; /* Height of footer */
+        overflow-y: auto;
+        z-index: 100;
+        padding: 20px 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .sidebar {
+        background-color: #1a1a1a !important;
+        border-right: 1px solid #2d2d2d;
+    }
+
+    [data-theme="dark"] .sidebar .nav-link {
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .sidebar .nav-link:hover {
+        background-color: #2d2d2d !important;
+    }
+
+    [data-theme="dark"] .sidebar .nav-link.active {
+        background-color: #66b3ff !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .sidebar .sidebar-heading {
+        color: #a0a0a0 !important;
+    }
+
+    .main-content {
+        margin-left: 16.666667%;
+        padding: 20px;
+    }
+
+    /* Footer adjustments */
+    .footer {
+        position: relative !important;
+        z-index: 101;
+    }
+
+    @media (max-width: 768px) {
+        .admin-container {
+            min-height: auto;
+        }
+        
+        .sidebar {
+            position: static;
+            height: auto;
+            margin-bottom: 20px;
+            bottom: auto;
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
+    }
+
+    .nav-link {
+        padding: 0.5rem 1rem;
+        color: #333;
+    }
+
+    .nav-link:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+
+    .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .sidebar-heading {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Container -->
+<div class="container-fluid admin-container">
+    <div class="row">
+        <!-- Admin Sidebar -->
+        <div class="col-md-2">
+            <nav class="sidebar">
+                <div class="position-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" 
+                               href="{% url 'core:admin_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'pending_apps' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:admin_pending_apps' %}">
+                                <i class="bi bi-list-check"></i> Pending Apps
+                                {% if stats.apps.pending %}
+                                    <span class="badge bg-primary">{{ stats.apps.pending }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'users' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:admin_manage_users' %}">
+                                <i class="bi bi-people"></i> Manage Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'subscriptions' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:admin_subscriptions' %}">
+                                <i class="bi bi-star"></i> Manage Subscriptions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'investments' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:admin_investments' %}">
+                                <i class="bi bi-graph-up"></i> Investment Records
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'verify_payment_accounts' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:verify_payment_accounts' %}">
+                                <i class="bi bi-credit-card"></i> Payment Verifications
+                                {% if unverified_payment_accounts_count > 0 %}
+                                    <span class="badge bg-warning">{{ unverified_payment_accounts_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'project_requests' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:admin_project_requests' %}">
+                                <i class="bi bi-briefcase"></i> Project Requests
+                                {% if new_project_requests_count > 0 %}
+                                    <span class="badge bg-primary">{{ new_project_requests_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'manage_escrow_releases' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'core:manage_escrow_releases' %}">
+                                <i class="bi bi-shield-check"></i> Escrow/Verification
+                                {% if pending_verifications_count > 0 %}
+                                    <span class="badge bg-warning">{{ pending_verifications_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                                <span>Reports</span>
+                            </h6>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'core:platform_stats_report' %}">
+                                <i class="bi bi-file-earmark-bar-graph"></i>
+                                Platform Statistics
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'core:investment_report' %}">
+                                <i class="bi bi-file-earmark-spreadsheet"></i>
+                                Investment Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'monitoring_dashboard' %}active{% endif %}" 
+                               href="{% url 'core:monitoring_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i>
+                                System Monitoring
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'health_dashboard' %}active{% endif %}" 
+                               href="{% url 'core:health_dashboard' %}">
+                                <i class="bi bi-heart"></i>
+                                Health Status
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'backup_dashboard' %}active{% endif %}" 
+                               href="{% url 'core:backup_dashboard' %}">
+                                <i class="bi bi-archive"></i>
+                                Backup Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'rules_dashboard' %}active{% endif %}" 
+                               href="{% url 'core:rules_dashboard' %}">
+                                <i class="bi bi-gear"></i>
+                                Business Rules
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'security_dashboard' %}active{% endif %}" 
+                               href="{% url 'core:security_dashboard' %}">
+                                <i class="bi bi-shield-check"></i>
+                                Security
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'base_template' %}active{% endif %}" 
+                               href="{% url 'core:base_template' %}">
+                                <i class="bi bi-code-square"></i>
+                                Base Template
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 main-content">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

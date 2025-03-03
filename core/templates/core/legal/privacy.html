@@ -1,0 +1,259 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy - AI App Marketplace{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        color-scheme: light dark;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        .legal-content {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        .legal-content ul li {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        .card {
+            background-color: rgba(33, 37, 41, 0.95) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .text-muted {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+    }
+
+    @media print {
+        header, footer, .no-print {
+            display: none !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        a[href]:after {
+            content: " (" attr(href) ")";
+        }
+    }
+    .legal-content {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    .legal-content h2 {
+        margin-top: 2rem;
+        scroll-margin-top: 2rem;
+    }
+    .table-of-contents {
+        position: sticky;
+        top: 2rem;
+    }
+    .table-of-contents a {
+        text-decoration: none;
+        color: inherit;
+    }
+    .table-of-contents a:hover {
+        color: var(--bs-primary);
+    }
+    .version-history {
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <!-- Table of Contents - Desktop -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="table-of-contents">
+                <h6 class="fw-bold mb-3">Contents</h6>
+                <nav class="nav flex-column">
+                    <a class="nav-link py-1" href="#information-collection">1. Information We Collect</a>
+                    <a class="nav-link py-1" href="#information-use">2. How We Use Information</a>
+                    <a class="nav-link py-1" href="#information-sharing">3. Information Sharing</a>
+                    <a class="nav-link py-1" href="#data-security">4. Data Security</a>
+                    <a class="nav-link py-1" href="#user-rights">5. Your Rights</a>
+                    <a class="nav-link py-1" href="#cookies">6. Cookies</a>
+                    <a class="nav-link py-1" href="#data-retention">7. Data Retention</a>
+                    <a class="nav-link py-1" href="#changes">8. Changes to Policy</a>
+                </nav>
+                <div class="mt-4">
+                    <a href="#" class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Print
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#versionHistoryModal">
+                        <i class="bi bi-clock-history"></i> Version History
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="display-6 mb-4">Privacy Policy</h1>
+                    <p class="text-muted mb-4">Last updated: {% now "F j, Y" %}</p>
+                    
+                    <div class="legal-content">
+                        <section id="information-collection">
+                            <h2 class="h4">1. Information We Collect</h2>
+                            <p>We collect information you provide directly to us, including:</p>
+                            <ul>
+                                <li>Personal identification information (name, email, etc.)</li>
+                                <li>Payment and transaction information</li>
+                                <li>Communication preferences</li>
+                                <li>Usage data and analytics</li>
+                            </ul>
+                        </section>
+
+                        <section id="information-use">
+                            <h2 class="h4">2. How We Use Information</h2>
+                            <p>We use the collected information to:</p>
+                            <ul>
+                                <li>Provide and maintain our services</li>
+                                <li>Process transactions and payments</li>
+                                <li>Send important notifications</li>
+                                <li>Improve user experience</li>
+                                <li>Comply with legal obligations</li>
+                            </ul>
+                        </section>
+
+                        <section id="information-sharing">
+                            <h2 class="h4">3. Information Sharing</h2>
+                            <p>We share information with:</p>
+                            <ul>
+                                <li>Payment processors and financial institutions</li>
+                                <li>Identity verification services</li>
+                                <li>Legal and regulatory authorities</li>
+                                <li>Service providers and partners</li>
+                            </ul>
+                        </section>
+
+                        <section id="data-security">
+                            <h2 class="h4">4. Data Security</h2>
+                            <p>We implement appropriate security measures to protect your information, including:</p>
+                            <ul>
+                                <li>Encryption of sensitive data</li>
+                                <li>Regular security assessments</li>
+                                <li>Access controls and monitoring</li>
+                                <li>Secure data storage</li>
+                            </ul>
+                        </section>
+
+                        <section id="user-rights">
+                            <h2 class="h4">5. Your Rights</h2>
+                            <p>You have the right to:</p>
+                            <ul>
+                                <li>Access your personal information</li>
+                                <li>Correct inaccurate data</li>
+                                <li>Request data deletion</li>
+                                <li>Opt-out of marketing communications</li>
+                            </ul>
+                        </section>
+
+                        <section id="cookies">
+                            <h2 class="h4">6. Cookies</h2>
+                            <p>We use cookies and similar technologies to:</p>
+                            <ul>
+                                <li>Maintain session information</li>
+                                <li>Remember preferences</li>
+                                <li>Analyze platform usage</li>
+                                <li>Enhance security</li>
+                            </ul>
+                        </section>
+
+                        <section id="data-retention">
+                            <h2 class="h4">7. Data Retention</h2>
+                            <p>We retain your information for as long as necessary to:</p>
+                            <ul>
+                                <li>Provide our services</li>
+                                <li>Comply with legal obligations</li>
+                                <li>Resolve disputes</li>
+                                <li>Enforce agreements</li>
+                            </ul>
+                        </section>
+
+                        <section id="changes">
+                            <h2 class="h4">8. Changes to Policy</h2>
+                            <p>We may update this policy periodically. Users will be notified of significant changes.</p>
+                            <p>For privacy-related inquiries, contact us at privacy@aiappmarketplace.com</p>
+                        </section>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                    <div class="mt-5 text-center no-print">
+                        <button class="btn btn-primary" id="acceptPrivacyBtn" data-document-id="{{ document.id }}">
+                            I Accept the Privacy Policy
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Version History Modal -->
+<div class="modal fade" id="versionHistoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Version History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="version-history">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <strong>Version 1.2</strong>
+                            <div class="text-muted">January 28, 2024</div>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-outline-secondary">View</a>
+                    </div>
+                    <!-- Add more versions -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const acceptPrivacyBtn = document.getElementById('acceptPrivacyBtn');
+    if (acceptPrivacyBtn) {
+        acceptPrivacyBtn.addEventListener('click', function() {
+            const documentId = this.dataset.documentId;
+            
+            fetch(`{% url "core:accept_agreement" document_id=0 %}`.replace('0', documentId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    agreement_type: 'privacy'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.next_url) {
+                        window.location.href = data.next_url;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    console.error('Error:', data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    }
+});
+</script>
+{% endblock %} 
