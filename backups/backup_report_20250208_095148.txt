@@ -1,4 +1,0 @@
-Backup Report - 20250208_095148
-=========================
-Status: Success
-Backup Location: backups
